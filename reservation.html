@@ -137,9 +137,9 @@
   // 1) Depuis Supabase > Project Settings > API :
   var SUPABASE_URL = "https://ubclmpicdviguubqdsfl.supabase.co";      // ex: https://xxxx.supabase.co
   var SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InViY2xtcGljZHZpZ3V1YnFkc2ZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODUxMDIxNzEsImV4cCI6MjEwMDY3ODE3MX0.D0iTFWa9I-add6tpI-MiXgyCuep01kRVTczB2XDN-48";      // la cle "anon public"
-  // 2) Ton lien de paiement Stripe (2 produits : adulte 38 EUR + enfant 14 EUR, quantites ajustables) :
-  var STRIPE_LINK = "https://buy.stripe.com/14A7sL69DbZ7eK8f7NeME02";
-  // 3) WhatsApp de secours (numero francais ; plus tard: "carrapidride")
+  // 2) Le paiement est desormais cree cote serveur (Edge Function
+  //    "create-checkout"). Plus aucun lien Stripe dans cette page.
+  // 3) WhatsApp de secours
   var WHATSAPP     = "33767953581";
   /* ===================================================== */
 
@@ -170,10 +170,10 @@
     if(!sb){ placesLibres=CAP; setAvail(CAP); return; }
     box.className='avail load'; box.textContent='Verification des places...';
     try{
-      // somme des places deja reservees pour ce depart
-      var r=await sb.from('reservations').select('places').eq('date',date).eq('creneau',cr).eq('statut','paye');
-      var pris=0; (r.data||[]).forEach(function(x){pris+=x.places;});
-      placesLibres=Math.max(0,CAP-pris); setAvail(placesLibres);
+      // le serveur renvoie uniquement un nombre, jamais les donnees clients
+      var r=await sb.rpc('places_libres',{p_date:date,p_creneau:cr});
+      if(r.error) throw r.error;
+      placesLibres=Math.max(0,parseInt(r.data)||0); setAvail(placesLibres);
     }catch(e){ placesLibres=CAP; setAvail(CAP); }
   }
   function setAvail(left){
@@ -199,43 +199,49 @@
     window.location.href='https://wa.me/'+WHATSAPP+'?text='+msg; return false;
   }
 
-  function stripeUrl(base,ref,email){
-    return base+(base.indexOf('?')>-1?'&':'?')
-      +'client_reference_id='+encodeURIComponent(ref)
-      +'&prefilled_email='+encodeURIComponent(email||'');
-  }
-
   async function goPay(){
     var ad=val('ad'),en=val('en');
     if(ad+en<1){alert('Ajoutez au moins 1 passager.');return false;}
     if(placesLibres<=0){alert('Ce depart est complet.');return false;}
     var date=document.getElementById('date').value;
     if(!date){alert('Choisissez une date.');return false;}
-    var cr=document.getElementById('creneau').value;
-    var nom=document.getElementById('nom').value||'';
     var email=document.getElementById('email').value||'';
-    var tel=document.getElementById('tel').value||'';
-    var total=ad*PRIX_AD+en*PRIX_EN;
+    if(!email||email.indexOf('@')<0){alert('Indiquez un e-mail valide : il sert a recevoir votre confirmation.');return false;}
 
-    if(!STRIPE_LINK || !sb){ return waFallback(); }
+    if(!sb){ return waFallback(); }
 
-    // enregistre la reservation "en_attente" dans Supabase
-    var ref='CRR-'+Date.now();
+    var btn=document.getElementById('payBtn');
+    var libelle=btn.textContent;
+    btn.classList.add('disabled');
+    btn.textContent='Preparation du paiement...';
+
     try{
-      await sb.from('reservations').insert({
-        ref:ref,date:date,creneau:cr,adultes:ad,enfants:en,places:ad+en,
-        montant:total,nom:nom,email:email,tel:tel,statut:'en_attente'
-      });
-    }catch(e){ /* on paie quand meme, le webhook confirmera */ }
+      var r=await sb.functions.invoke('create-checkout',{body:{
+        date:date,
+        creneau:document.getElementById('creneau').value,
+        adultes:ad, enfants:en,
+        nom:document.getElementById('nom').value||'',
+        email:email,
+        tel:document.getElementById('tel').value||''
+      }});
 
-    // rappel des quantites a saisir sur la page Stripe (lien a 2 produits)
-    var rappel='Sur la page de paiement, indiquez bien :\n\n'
-      +'\u2022 '+ad+' adulte(s) a 38 EUR\n'
-      +'\u2022 '+en+' enfant(s) a 14 EUR\n\n'
-      +'Total attendu : '+total+' EUR.\n\nCliquez sur OK pour continuer vers le paiement.';
-    if(!confirm(rappel)){ return false; }
+      if(r.error){
+        var msg='';
+        try{ msg=(await r.error.context.json()).error; }catch(_e){}
+        throw new Error(msg||'Service indisponible');
+      }
+      if(!r.data||!r.data.url){ throw new Error('Reponse invalide'); }
 
-    window.location.href=stripeUrl(STRIPE_LINK,ref,email); return false;
+      window.location.href=r.data.url;
+      return false;
+
+    }catch(e){
+      btn.classList.remove('disabled');
+      btn.textContent=libelle;
+      refreshAvail();
+      alert((e.message||'Une erreur est survenue')+'\n\nVous pouvez aussi nous ecrire sur WhatsApp.');
+      return false;
+    }
   }
 
   // init

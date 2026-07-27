@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Merci — Car Rapid Ride</title>
+<link rel="stylesheet" media="print" onload="this.media='all'" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=DM+Sans:wght@400;500;700&display=swap">
+<style>
+  :root{--bleu:#1B3FAE;--creme:#FBF3DE;--jaune:#FFC61A;--noir:#14181F;--vert:#1E9E6A;
+    --display:'Fredoka',system-ui,sans-serif;--body:'DM Sans',system-ui,sans-serif;}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:var(--body);background:var(--creme);color:var(--noir);line-height:1.55;
+    min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px}
+  .card{background:#fff;border:3px solid var(--noir);border-radius:20px;
+    box-shadow:7px 7px 0 var(--jaune);padding:34px 26px;max-width:520px;text-align:center}
+  .tick{width:64px;height:64px;border-radius:50%;background:var(--vert);color:#fff;
+    font-size:2rem;display:flex;align-items:center;justify-content:center;margin:0 auto 18px}
+  h1{font-family:var(--display);font-size:1.9rem;color:var(--bleu);margin-bottom:10px}
+  p{color:#55514a;margin-bottom:14px}
+  .ref{display:inline-block;font-family:var(--display);font-weight:700;background:var(--creme);
+    border:2px solid var(--noir);border-radius:12px;padding:9px 18px;margin:6px 0 18px}
+  .btn{display:inline-block;margin-top:8px;padding:14px 24px;border-radius:14px;background:var(--bleu);
+    color:#fff;font-family:var(--display);font-weight:700;text-decoration:none;box-shadow:4px 4px 0 var(--noir)}
+  .foot{margin-top:22px;font-size:.84rem;color:#6E6551}
+</style>
+</head>
+<body>
+  <div class="card">
+    <div class="tick">&#10003;</div>
+    <h1>Votre place est reservee !</h1>
+    <p>Merci, votre paiement a bien ete recu. Un recu Stripe vient de partir vers votre boite mail.</p>
+    <div class="ref" id="ref">&nbsp;</div>
+    <p>Conservez cette reference : elle nous permet de retrouver votre reservation le jour du depart.</p>
+    <a class="btn" href="index.html">Retour a l'accueil</a>
+    <div class="foot">
+      Une question ? WhatsApp : +221 77 481 10 34<br>
+      <strong>Car Rapid Ride</strong> &middot; by dd &middot; Dakar
+    </div>
+  </div>
+<script>
+  var r=new URLSearchParams(location.search).get('ref');
+  document.getElementById('ref').textContent = r ? 'Reference : '+r : 'Reference envoyee par e-mail';
+</script>
+</body>
+</html>
