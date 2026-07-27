@@ -34,10 +34,10 @@
   input,select{width:100%;padding:13px 14px;border:2px solid #d8cdb0;border-radius:12px;font-family:var(--body);font-size:1rem;background:#fdfaf1;color:var(--noir)}
   input:focus,select:focus{outline:none;border-color:var(--bleu)}
   .row{display:grid;grid-template-columns:1fr 1fr;gap:14px}
-  .counter{display:flex;align-items:center;border:2px solid #d8cdb0;border-radius:12px;overflow:hidden;background:#fdfaf1}
-  .counter button{width:52px;height:50px;border:none;background:var(--creme);font-size:1.5rem;font-weight:700;color:var(--bleu);cursor:pointer;font-family:var(--display);flex:none}
+  .counter{display:flex;align-items:stretch;border:2px solid #d8cdb0;border-radius:12px;overflow:hidden;background:#fdfaf1}
+  .counter button{width:46px;height:50px;border:none;background:var(--creme);font-size:1.5rem;font-weight:700;color:var(--bleu);cursor:pointer;font-family:var(--display);flex:none;display:flex;align-items:center;justify-content:center}
   .counter button:active{background:var(--jaune)}
-  .counter input{border:none;text-align:center;font-weight:700;background:transparent;pointer-events:none}
+  .counter input{flex:1;min-width:0;width:100%;border:none;text-align:center;font-family:var(--display);font-weight:700;font-size:1.4rem;color:var(--noir);background:#fff;pointer-events:none;padding:0}
   .avail{display:flex;align-items:center;gap:9px;margin-top:12px;padding:11px 14px;border-radius:12px;font-weight:700;font-size:.92rem}
   .avail.ok{background:#e4f5ec;color:var(--vert)}
   .avail.low{background:#fef3d6;color:#a9791a}
@@ -144,8 +144,8 @@
 <script>
   /* ================= CONFIG (a remplir) ================= */
   // 1) Depuis Supabase > Project Settings > API :
-  var SUPABASE_URL = "";      // ex: https://xxxx.supabase.co
-  var SUPABASE_KEY = "";      // la cle "anon public"
+  var SUPABASE_URL = "https://ubclmpicdviguubqdsfl.supabase.co";      // ex: https://xxxx.supabase.co
+  var SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InViY2xtcGljZHZpZ3V1YnFkc2ZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODUxMDIxNzEsImV4cCI6MjEwMDY3ODE3MX0.D0iTFWa9I-add6tpI-MiXgyCuep01kRVTczB2XDN-48";      // la cle "anon public"
   // 2) Ton lien de paiement Stripe (Payment Link) :
   var STRIPE_LINK  = "";      // ex: https://buy.stripe.com/xxxx
   // 3) WhatsApp de secours (numero francais ; plus tard: "carrapidride")
