@@ -128,7 +128,7 @@
 
     <div class="setup">
       <b>&#9881; A configurer (a retirer une fois fait) :</b> renseigne tes 3 valeurs ci-dessous dans le code de la page
-      (cherche &laquo; CONFIG &raquo;) : <code>SUPABASE_URL</code>, <code>SUPABASE_KEY</code> et <code>STRIPE_LINK</code>.
+      (cherche &laquo; CONFIG &raquo;) : <code>SUPABASE_URL</code>, <code>SUPABASE_KEY</code>, <code>STRIPE_LINK</code>.
       Tant que ce n'est pas fait, le bouton ouvre WhatsApp et les places affichent 12/12.
       Suis le guide <b>GUIDE-reservation-temps-reel.md</b>.
     </div>
@@ -146,8 +146,8 @@
   // 1) Depuis Supabase > Project Settings > API :
   var SUPABASE_URL = "https://ubclmpicdviguubqdsfl.supabase.co";      // ex: https://xxxx.supabase.co
   var SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InViY2xtcGljZHZpZ3V1YnFkc2ZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODUxMDIxNzEsImV4cCI6MjEwMDY3ODE3MX0.D0iTFWa9I-add6tpI-MiXgyCuep01kRVTczB2XDN-48";      // la cle "anon public"
-  // 2) Ton lien de paiement Stripe (Payment Link) :
-  var STRIPE_LINK  = "";      // ex: https://buy.stripe.com/xxxx
+  // 2) Ton lien de paiement Stripe (2 produits : adulte 38 EUR + enfant 14 EUR, quantites ajustables) :
+  var STRIPE_LINK = "https://buy.stripe.com/14A7sL69DbZ7eK8f7NeME02";
   // 3) WhatsApp de secours (numero francais ; plus tard: "carrapidride")
   var WHATSAPP     = "33767953581";
   /* ===================================================== */
@@ -208,6 +208,12 @@
     window.location.href='https://wa.me/'+WHATSAPP+'?text='+msg; return false;
   }
 
+  function stripeUrl(base,ref,email){
+    return base+(base.indexOf('?')>-1?'&':'?')
+      +'client_reference_id='+encodeURIComponent(ref)
+      +'&prefilled_email='+encodeURIComponent(email||'');
+  }
+
   async function goPay(){
     var ad=val('ad'),en=val('en');
     if(ad+en<1){alert('Ajoutez au moins 1 passager.');return false;}
@@ -222,7 +228,7 @@
 
     if(!STRIPE_LINK || !sb){ return waFallback(); }
 
-    // 1) cree une reservation "en_attente" dans Supabase
+    // enregistre la reservation "en_attente" dans Supabase
     var ref='CRR-'+Date.now();
     try{
       await sb.from('reservations').insert({
@@ -231,11 +237,14 @@
       });
     }catch(e){ /* on paie quand meme, le webhook confirmera */ }
 
-    // 2) redirige vers Stripe ; la ref permet au webhook de confirmer la place
-    var url=STRIPE_LINK+(STRIPE_LINK.indexOf('?')>-1?'&':'?')
-      +'client_reference_id='+encodeURIComponent(ref)
-      +'&prefilled_email='+encodeURIComponent(email);
-    window.location.href=url; return false;
+    // rappel des quantites a saisir sur la page Stripe (lien a 2 produits)
+    var rappel='Sur la page de paiement, indiquez bien :\n\n'
+      +'\u2022 '+ad+' adulte(s) a 38 EUR\n'
+      +'\u2022 '+en+' enfant(s) a 14 EUR\n\n'
+      +'Total attendu : '+total+' EUR.\n\nCliquez sur OK pour continuer vers le paiement.';
+    if(!confirm(rappel)){ return false; }
+
+    window.location.href=stripeUrl(STRIPE_LINK,ref,email); return false;
   }
 
   // init
