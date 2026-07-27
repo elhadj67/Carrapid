@@ -53,9 +53,6 @@
   .btn-pay.disabled{background:#b9b3a5;box-shadow:4px 4px 0 #8a8577;cursor:not-allowed;pointer-events:none}
   .secure{text-align:center;font-size:.78rem;color:#6E6551;margin-top:12px}
   .wa{display:block;text-align:center;margin-top:14px;font-size:.88rem;color:var(--vert);font-weight:700;text-decoration:none}
-  .setup{background:#FFF3CD;border:2px dashed #C8402F;border-radius:14px;padding:16px;margin:20px 0 0;font-size:.84rem;color:#7a5b00}
-  .setup b{color:#C8402F}
-  .setup code{background:#fff;padding:2px 6px;border-radius:5px;font-size:.8rem;word-break:break-all}
   footer{background:var(--noir);color:#cfc8b8;text-align:center;padding:26px 20px;font-size:.82rem}
   footer strong{color:var(--jaune)}
 </style>
@@ -126,12 +123,6 @@
     <div class="secure">&#128274; Places en temps reel &middot; paiement securise par carte via Stripe</div>
     <a class="wa" id="waLink" href="#" onclick="return waFallback()">&#128241; Une question ? Ecris-nous sur WhatsApp</a>
 
-    <div class="setup">
-      <b>&#9881; A configurer (a retirer une fois fait) :</b> renseigne tes 3 valeurs ci-dessous dans le code de la page
-      (cherche &laquo; CONFIG &raquo;) : <code>SUPABASE_URL</code>, <code>SUPABASE_KEY</code>, <code>STRIPE_LINK</code>.
-      Tant que ce n'est pas fait, le bouton ouvre WhatsApp et les places affichent 12/12.
-      Suis le guide <b>GUIDE-reservation-temps-reel.md</b>.
-    </div>
   </div>
 </div>
 <footer>
