@@ -54,6 +54,44 @@
   .secure{text-align:center;font-size:.78rem;color:#6E6551;margin-top:12px}
   .wa{display:block;text-align:center;margin-top:14px;font-size:.88rem;color:var(--vert);font-weight:700;text-decoration:none}
   footer{background:var(--noir);color:#cfc8b8;text-align:center;padding:26px 20px;font-size:.82rem}
+  /* ---------- calendrier des departs ---------- */
+  .cal{border:2px solid #d8cdb0;border-radius:14px;background:#fdfaf1;padding:12px 12px 10px;margin-top:7px}
+  .cal-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px}
+  .cal-head b{font-family:var(--display);font-size:1.02rem;color:var(--bleu);text-transform:capitalize}
+  .cal-nav{width:36px;height:36px;flex:none;border:2px solid var(--noir);border-radius:10px;background:#fff;
+    font-family:var(--display);font-size:1.1rem;font-weight:700;color:var(--bleu);cursor:pointer;line-height:1}
+  .cal-nav:disabled{opacity:.3;cursor:not-allowed}
+  .cal-nav:focus-visible,.promo button:focus-visible,.day:focus-visible{outline:3px solid var(--bleu);outline-offset:2px}
+  .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+  .cal-dow{text-align:center;font-size:.64rem;font-weight:700;color:#8a8271;text-transform:uppercase;padding-bottom:3px}
+  .day{border:2px solid transparent;border-radius:10px;background:#fff;padding:4px 2px 5px;min-height:54px;
+    text-align:center;cursor:pointer;font-family:var(--body)}
+  .day .n{display:block;font-family:var(--display);font-weight:700;font-size:.95rem;color:var(--noir)}
+  .day .b{display:flex;gap:3px;justify-content:center;margin-top:3px}
+  .day .b i{font-style:normal;font-size:.55rem;font-weight:700;border-radius:4px;padding:1px 3px;line-height:1.35}
+  .day .b .ok{background:#e4f5ec;color:var(--vert)}
+  .day .b .low{background:#fef3d6;color:#a9791a}
+  .day .b .full{background:#fde3e0;color:var(--rouge)}
+  .day .b .wait{background:#eee;color:#b5b0a4}
+  .day.empty{background:transparent;cursor:default;border-color:transparent;min-height:0}
+  .day.off{opacity:.3;cursor:not-allowed;background:#f4efe2}
+  .day.sel{border-color:var(--bleu);background:#fff;box-shadow:3px 3px 0 var(--jaune)}
+  .cal-legend{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-top:11px;font-size:.68rem;color:#6E6551}
+  .cal-legend span{display:flex;align-items:center;gap:4px}
+  .cal-legend em{width:11px;height:11px;border-radius:3px;display:inline-block}
+  /* ---------- code promo ---------- */
+  .promo{display:flex;gap:8px;margin-top:7px}
+  .promo input{flex:1;text-transform:uppercase;letter-spacing:.06em}
+  .promo button{flex:none;padding:0 18px;border:2px solid var(--noir);border-radius:12px;background:var(--jaune);
+    font-family:var(--display);font-weight:700;font-size:.95rem;color:var(--noir);cursor:pointer}
+  .promo button:active{transform:translate(1px,1px)}
+  .promo-msg{margin-top:8px;font-size:.85rem;font-weight:700;display:none}
+  .promo-msg.ok{color:var(--vert);display:block}
+  .promo-msg.ko{color:var(--rouge);display:block}
+  .total .lines{display:flex;flex-direction:column;gap:1px}
+  .total .strike{display:none;font-size:.8rem;color:#9c968a;text-decoration:line-through}
+  @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+  @media (max-width:400px){.day{min-height:48px}.day .b i{font-size:.5rem;padding:1px 2px}}
   footer strong{color:var(--jaune)}
 </style>
 </head>
@@ -76,8 +114,22 @@
       <div class="pill"><b>14&euro;</b><span>par enfant</span></div>
     </div>
 
-    <label for="date">Date souhaitee</label>
-    <input type="date" id="date" onchange="refreshAvail()">
+    <label id="calLabel">Choisissez votre depart</label>
+    <div class="cal">
+      <div class="cal-head">
+        <button type="button" class="cal-nav" id="calPrev" onclick="moisPrec()" aria-label="Mois precedent">&lsaquo;</button>
+        <b id="calTitre">&nbsp;</b>
+        <button type="button" class="cal-nav" id="calNext" onclick="moisSuiv()" aria-label="Mois suivant">&rsaquo;</button>
+      </div>
+      <div class="cal-grid" id="calGrid" role="grid" aria-labelledby="calLabel"></div>
+      <div class="cal-legend">
+        <span><em style="background:#1E9E6A"></em>Places libres</span>
+        <span><em style="background:#FFC61A"></em>Presque complet</span>
+        <span><em style="background:#E63325"></em>Complet</span>
+        <span><strong>M</strong>&nbsp;matin &middot; <strong>A</strong>&nbsp;apres-midi</span>
+      </div>
+    </div>
+    <input type="hidden" id="date">
 
     <label for="creneau">Creneau</label>
     <select id="creneau" onchange="refreshAvail()">
@@ -113,8 +165,19 @@
     <label for="tel">Telephone / WhatsApp</label>
     <input type="tel" id="tel" placeholder="+221 ...">
 
+    <label for="promoCode">Code promo</label>
+    <div class="promo">
+      <input type="text" id="promoCode" placeholder="Ex : DAKAR10" autocomplete="off"
+             onkeydown="if(event.key==='Enter'){event.preventDefault();appliquerPromo();}">
+      <button type="button" onclick="appliquerPromo()">Appliquer</button>
+    </div>
+    <div class="promo-msg" id="promoMsg" role="status"></div>
+
     <div class="total">
-      <span class="lbl">Total a regler</span>
+      <div class="lines">
+        <span class="lbl">Total a regler</span>
+        <span class="strike" id="totalBrut"></span>
+      </div>
       <span class="amt" id="total">60&euro;</span>
     </div>
     <div class="included">Verre de cloture inclus dans le prix</div>
@@ -148,7 +211,11 @@
   if(SUPABASE_URL && SUPABASE_KEY && window.supabase){ sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY); }
 
   function val(id){return parseInt(document.getElementById(id).value)||0;}
-  function todayISO(){return new Date().toISOString().slice(0,10);}
+  function iso(d){var m=String(d.getMonth()+1),j=String(d.getDate());
+    return d.getFullYear()+'-'+(m.length<2?'0'+m:m)+'-'+(j.length<2?'0'+j:j);}
+  function todayISO(){return iso(new Date());}
+  function eur(n){n=Math.round(n*100)/100;
+    return (n%1===0?String(n):n.toFixed(2).replace('.',','))+'\u20ac';}
   var placesLibres=CAP;
 
   function chg(id,d){
@@ -158,9 +225,19 @@
     if(v+other>maxTotal){ v=Math.max(0,maxTotal-other); }
     document.getElementById(id).value=v; updateTotal();
   }
+  function sousTotal(){return val('ad')*PRIX_AD+val('en')*PRIX_EN;}
+  function remiseLocale(brut){
+    if(!promo) return 0;
+    var r = promo.type==='pourcent' ? brut*promo.valeur/100 : promo.valeur;
+    r = Math.round(r*100)/100;
+    return Math.min(r,brut);
+  }
   function updateTotal(){
-    var t=val('ad')*PRIX_AD+val('en')*PRIX_EN;
-    document.getElementById('total').textContent=t+'\u20ac';
+    var brut=sousTotal(), r=remiseLocale(brut);
+    var brutEl=document.getElementById('totalBrut');
+    if(r>0){ brutEl.style.display='block'; brutEl.textContent=eur(brut); }
+    else{ brutEl.style.display='none'; }
+    document.getElementById('total').textContent=eur(brut-r);
   }
 
   async function refreshAvail(){
@@ -173,7 +250,9 @@
       // le serveur renvoie uniquement un nombre, jamais les donnees clients
       var r=await sb.rpc('places_libres',{p_date:date,p_creneau:cr});
       if(r.error) throw r.error;
-      placesLibres=Math.max(0,parseInt(r.data)||0); setAvail(placesLibres);
+      placesLibres=Math.max(0,parseInt(r.data)||0);
+      dispo[date+'|'+cr]=placesLibres; renderCal();
+      setAvail(placesLibres);
     }catch(e){ placesLibres=CAP; setAvail(CAP); }
   }
   function setAvail(left){
@@ -222,7 +301,8 @@
         adultes:ad, enfants:en,
         nom:document.getElementById('nom').value||'',
         email:email,
-        tel:document.getElementById('tel').value||''
+        tel:document.getElementById('tel').value||'',
+        promo:promo?promo.code:''
       }});
 
       if(r.error){
@@ -244,9 +324,118 @@
     }
   }
 
+
+  /* ================= CALENDRIER DES DEPARTS ================= */
+  var dispo={};                       // 'YYYY-MM-DD|Creneau' -> places libres
+  var mois=new Date(); mois.setDate(1); mois.setHours(0,0,0,0);
+  var JOURS=['L','M','M','J','V','S','D'];
+
+  function minuit(){var d=new Date(); d.setHours(0,0,0,0); return d;}
+
+  function renderCal(){
+    var grid=document.getElementById('calGrid');
+    if(!grid) return;
+    var y=mois.getFullYear(), m=mois.getMonth(), today=minuit();
+    var titre=mois.toLocaleDateString('fr-FR',{month:'long',year:'numeric'});
+    document.getElementById('calTitre').textContent=titre;
+    document.getElementById('calPrev').disabled=(y===today.getFullYear()&&m===today.getMonth());
+    var choisie=document.getElementById('date').value;
+    var offset=(new Date(y,m,1).getDay()+6)%7;
+    var nb=new Date(y,m+1,0).getDate();
+    var h='';
+    for(var d=0;d<7;d++){ h+='<div class="cal-dow">'+JOURS[d]+'</div>'; }
+    for(var i=0;i<offset;i++){ h+='<div class="day empty"></div>'; }
+    for(var j=1;j<=nb;j++){
+      var dt=new Date(y,m,j), k=iso(dt), passe=(dt<today);
+      var cls='day'+(passe?' off':'')+(k===choisie?' sel':'');
+      var b='';
+      if(!passe){
+        b+=badge('M',dispo[k+'|Matin']);
+        b+=badge('A',dispo[k+'|Apres-midi']);
+      }
+      h+='<div class="'+cls+'"'+(passe?'':' tabindex="0" role="button" data-d="'+k+'"')+
+         ' aria-label="'+j+' '+titre+'"><span class="n">'+j+'</span><span class="b">'+b+'</span></div>';
+    }
+    grid.innerHTML=h;
+  }
+
+  function badge(lettre,libres){
+    if(libres===undefined) return '<i class="wait">'+lettre+'</i>';
+    var c = libres<=0 ? 'full' : (libres<=4 ? 'low' : 'ok');
+    return '<i class="'+c+'">'+lettre+(libres>0?libres:'')+'</i>';
+  }
+
+  async function chargerMois(){
+    var y=mois.getFullYear(), m=mois.getMonth();
+    var d1=new Date(y,m,1), d2=new Date(y,m+1,0), today=minuit();
+    if(d1<today) d1=today;
+    renderCal();
+    if(!sb || d2<today) return;
+    try{
+      var r=await sb.rpc('dispo_periode',{p_debut:iso(d1),p_fin:iso(d2)});
+      if(r.error) throw r.error;
+      (r.data||[]).forEach(function(x){ dispo[x.jour+'|'+x.creneau]=x.libres; });
+    }catch(e){ /* le compteur du creneau choisi reste la source sure */ }
+    renderCal();
+  }
+
+  function moisPrec(){ mois.setMonth(mois.getMonth()-1); chargerMois(); }
+  function moisSuiv(){ mois.setMonth(mois.getMonth()+1); chargerMois(); }
+
+  function choisirJour(k){
+    if(!k) return;
+    document.getElementById('date').value=k;
+    var sel=document.getElementById('creneau'), cur=sel.value;
+    var autre=(cur==='Matin')?'Apres-midi':'Matin';
+    if(dispo[k+'|'+cur]<=0 && dispo[k+'|'+autre]>0){ sel.value=autre; }
+    renderCal();
+    refreshAvail();
+  }
+
+  document.getElementById('calGrid').addEventListener('click',function(e){
+    var c=e.target.closest('.day[data-d]'); if(c) choisirJour(c.getAttribute('data-d'));
+  });
+  document.getElementById('calGrid').addEventListener('keydown',function(e){
+    if(e.key!=='Enter'&&e.key!==' ') return;
+    var c=e.target.closest('.day[data-d]'); if(c){ e.preventDefault(); choisirJour(c.getAttribute('data-d')); }
+  });
+
+  /* ===================== CODE PROMO ===================== */
+  var promo=null;
+
+  async function appliquerPromo(){
+    var el=document.getElementById('promoCode'), msg=document.getElementById('promoMsg');
+    var code=(el.value||'').trim().toUpperCase();
+    el.value=code;
+    if(!code){ promo=null; msg.className='promo-msg'; msg.textContent=''; updateTotal(); return; }
+    var places=val('ad')+val('en');
+    if(places<1){ promo=null; msg.className='promo-msg ko';
+      msg.textContent='Ajoutez au moins 1 passager avant d\'appliquer un code.'; updateTotal(); return; }
+    if(!sb){ msg.className='promo-msg ko'; msg.textContent='Verification indisponible pour le moment.'; return; }
+    msg.className='promo-msg ok'; msg.textContent='Verification du code...';
+    try{
+      var r=await sb.rpc('valider_promo',{p_code:code,p_total:sousTotal(),p_places:places});
+      if(r.error) throw r.error;
+      var d=r.data;
+      if(!d||!d.ok){
+        promo=null; msg.className='promo-msg ko';
+        msg.textContent='\u2716 '+((d&&d.message)||'Code invalide.');
+      }else{
+        promo={code:d.code,type:d.type,valeur:Number(d.valeur)};
+        msg.className='promo-msg ok';
+        msg.textContent='\u2713 Code '+d.code+' applique : '+
+          (d.type==='pourcent' ? d.valeur+'% de remise' : '-'+eur(Number(d.valeur)));
+      }
+    }catch(e){
+      promo=null; msg.className='promo-msg ko';
+      msg.textContent='Verification impossible. Reessayez dans un instant.';
+    }
+    updateTotal();
+  }
+
   // init
-  document.getElementById('date').min=todayISO();
   document.getElementById('date').value=todayISO();
+  chargerMois();
   updateTotal(); refreshAvail();
 </script>
 </body>
