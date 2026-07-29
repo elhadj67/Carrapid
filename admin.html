@@ -251,7 +251,8 @@
         <div class="msg" id="msgFermeture"></div>
       </div>
       <div class="card">
-        <h2>Fermetures enregistrees</h2>
+        <h2>Fermetures enregistrees <span id="nbFermetures" style="font-family:var(--body);font-weight:400;font-size:.85rem;color:var(--gris)"></span></h2>
+        <div style="margin-bottom:12px"><button class="fin danger" onclick="toutRouvrir()">Tout rouvrir</button></div>
         <div class="defile">
           <table class="tableau">
             <thead><tr><th>Date</th><th>Creneau</th><th>Motif</th><th></th></tr></thead>
@@ -569,6 +570,7 @@ async function chargerFermetures(){
   corps.innerHTML='<tr><td colspan="4" class="vide">Chargement...</td></tr>';
   var r=await sb.from('fermetures').select('*').gte('date',iso(new Date())).order('date',{ascending:true});
   if(r.error){ corps.innerHTML='<tr><td colspan="4" class="vide">Erreur : '+txt(r.error.message)+'</td></tr>'; return; }
+  $('nbFermetures').textContent = r.data.length ? '\u2014 '+r.data.length+' depart'+(r.data.length>1?'s fermes':' ferme') : '';
   if(!r.data.length){ corps.innerHTML='<tr><td colspan="4" class="vide">Aucune fermeture a venir.</td></tr>'; return; }
   corps.innerHTML=r.data.map(function(f){
     return '<tr>'+
@@ -592,6 +594,18 @@ async function creerFermeture(){
   }
   dire('msgFermeture','Depart ferme.','ok');
   $('fMotif').value='';
+  chargerFermetures();
+}
+
+async function toutRouvrir(){
+  var r=await sb.from('fermetures').select('id');
+  if(r.error){ dire('msgGlobal','Lecture impossible : '+r.error.message,'ko'); return; }
+  var n=(r.data||[]).length;
+  if(!n){ dire('msgGlobal','Aucune fermeture a supprimer.','info'); return; }
+  if(!confirm('Rouvrir les '+n+' departs fermes ?\n\nCette action est definitive.')) return;
+  var d=await sb.from('fermetures').delete().gte('id',0);
+  if(d.error){ dire('msgGlobal','Reouverture refusee : '+d.error.message,'ko'); return; }
+  dire('msgGlobal',n+' departs rouverts.','ok');
   chargerFermetures();
 }
 
