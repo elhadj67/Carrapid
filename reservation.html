@@ -226,7 +226,7 @@
   function todayISO(){return iso(new Date());}
   function eur(n){n=Math.round(n*100)/100;
     return (n%1===0?String(n):n.toFixed(2).replace('.',','))+'\u20ac';}
-  var placesLibres=CAP;
+  var placesLibres=0;   // rien n'est ouvert tant que le serveur n'a pas repondu
 
   function chg(id,d){
     var v=val(id)+d; if(v<0)v=0;
@@ -250,23 +250,52 @@
     document.getElementById('total').textContent=eur(brut-r);
   }
 
+  // Renvoie un entier de places, ou null si l'information est inconnue.
+  // Ne JAMAIS retourner CAP par defaut : afficher 12 places sur un depart
+  // complet ou ferme est le pire resultat possible.
+  function nombreOuNull(v){
+    if(v===null||v===undefined) return null;
+    var n=Number(v);
+    return isFinite(n) ? Math.max(0,Math.round(n)) : null;
+  }
+
   async function refreshAvail(){
     var box=document.getElementById('avail');
     var date=document.getElementById('date').value, cr=document.getElementById('creneau').value;
     if(!date){box.className='avail load';box.textContent='Selectionnez une date...';return;}
-    if(!sb){ placesLibres=CAP; setAvail(CAP); return; }
+
+    // valeur deja connue par le calendrier : sert de repli, jamais d'invention
+    var repli=nombreOuNull(dispo[date+'|'+cr]);
+
+    if(!sb){ setAvail(repli); return; }
     box.className='avail load'; box.textContent='Verification des places...';
     try{
       // le serveur renvoie uniquement un nombre, jamais les donnees clients
       var r=await sb.rpc('places_libres',{p_date:date,p_creneau:cr});
       if(r.error) throw r.error;
-      placesLibres=Math.max(0,parseInt(r.data)||0);
-      dispo[date+'|'+cr]=placesLibres; renderCal();
-      setAvail(placesLibres);
-    }catch(e){ placesLibres=CAP; setAvail(CAP); }
+      var n=nombreOuNull(r.data);
+      if(n===null) throw new Error('reponse inattendue de places_libres');
+      dispo[date+'|'+cr]=n; renderCal();
+      setAvail(n);
+    }catch(e){
+      console.error('places_libres a echoue :', e && (e.message||e));
+      setAvail(repli);   // le calendrier fait foi ; sinon on bloque la reservation
+    }
   }
+
   function setAvail(left){
     var box=document.getElementById('avail');
+    left=nombreOuNull(left);
+
+    if(left===null){
+      placesLibres=0;
+      box.className='avail full';
+      box.textContent='\u26a0 Impossible de verifier les places pour ce depart. Ecris-nous sur WhatsApp.';
+      updatePayState();
+      return;
+    }
+
+    placesLibres=left;
     if(left<=0){box.className='avail full';box.textContent='\u2716 Ce depart est complet. Choisissez un autre creneau.';}
     else if(left<=4){box.className='avail low';box.textContent='\u26a1 Plus que '+left+' place'+(left>1?'s':'')+' sur ce depart !';}
     else{box.className='avail ok';box.textContent='\u2713 '+left+' places disponibles sur ce depart';}
@@ -370,9 +399,10 @@
   }
 
   function badge(lettre,libres){
-    if(libres===undefined) return '<i class="wait">'+lettre+'</i>';
-    var c = libres<=0 ? 'full' : (libres<=4 ? 'low' : 'ok');
-    return '<i class="'+c+'">'+lettre+(libres>0?libres:'')+'</i>';
+    var n=nombreOuNull(libres);
+    if(n===null) return '<i class="wait">'+lettre+'</i>';   // inconnu, pas complet
+    var c = n<=0 ? 'full' : (n<=4 ? 'low' : 'ok');
+    return '<i class="'+c+'">'+lettre+(n>0?n:'')+'</i>';
   }
 
   async function chargerMois(){
@@ -384,7 +414,7 @@
     try{
       var r=await sb.rpc('dispo_periode',{p_debut:iso(d1),p_fin:iso(d2)});
       if(r.error) throw r.error;
-      (r.data||[]).forEach(function(x){ dispo[x.jour+'|'+x.creneau]=x.libres; });
+      (r.data||[]).forEach(function(x){ dispo[x.jour+'|'+x.creneau]=nombreOuNull(x.libres); });
     }catch(e){ /* le compteur du creneau choisi reste la source sure */ }
     renderCal();
   }
