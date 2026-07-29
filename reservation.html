@@ -62,12 +62,12 @@
     font-family:var(--display);font-size:1.1rem;font-weight:700;color:var(--bleu);cursor:pointer;line-height:1}
   .cal-nav:disabled{opacity:.3;cursor:not-allowed}
   .cal-nav:focus-visible,.promo button:focus-visible,.day:focus-visible{outline:3px solid var(--bleu);outline-offset:2px}
-  .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+  .cal-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px}
   .cal-dow{text-align:center;font-size:.64rem;font-weight:700;color:#8a8271;text-transform:uppercase;padding-bottom:3px}
   .day{border:2px solid transparent;border-radius:10px;background:#fff;padding:4px 2px 5px;min-height:54px;
-    text-align:center;cursor:pointer;font-family:var(--body)}
+    min-width:0;overflow:hidden;text-align:center;cursor:pointer;font-family:var(--body)}
   .day .n{display:block;font-family:var(--display);font-weight:700;font-size:.95rem;color:var(--noir)}
-  .day .b{display:flex;gap:3px;justify-content:center;margin-top:3px}
+  .day .b{display:flex;gap:3px;justify-content:center;margin-top:3px;flex-wrap:wrap}
   .day .b i{font-style:normal;font-size:.55rem;font-weight:700;border-radius:4px;padding:1px 3px;line-height:1.35}
   .day .b .ok{background:#e4f5ec;color:var(--vert)}
   .day .b .low{background:#fef3d6;color:#a9791a}
@@ -91,7 +91,17 @@
   .total .lines{display:flex;flex-direction:column;gap:1px}
   .total .strike{display:none;font-size:.8rem;color:#9c968a;text-decoration:line-through}
   @media (prefers-reduced-motion:reduce){*{transition:none!important}}
-  @media (max-width:400px){.day{min-height:48px}.day .b i{font-size:.5rem;padding:1px 2px}}
+  @media (max-width:520px){
+    .wrap{padding:0 12px}
+    .card{padding:20px 14px}
+    .cal{padding:9px 7px}
+    .cal-grid{gap:3px}
+    .day{min-height:60px;padding:4px 1px 5px}
+    .day .n{font-size:.9rem}
+    .day .b{flex-direction:column;align-items:stretch;gap:2px;flex-wrap:nowrap}
+    .day .b i{font-size:.56rem;padding:1px 1px;text-align:center}
+    .cal-legend{gap:8px;font-size:.65rem}
+  }
   footer strong{color:var(--jaune)}
 </style>
 </head>

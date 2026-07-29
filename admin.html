@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>Administration — Car Rapid Ride</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" media="print" onload="this.media='all'" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=DM+Sans:wght@400;500;700&display=swap">
+<style>
+  :root{--bleu:#1B3FAE;--creme:#FBF3DE;--jaune:#FFC61A;--noir:#14181F;--rouge:#E63325;--vert:#1E9E6A;
+    --display:'Fredoka',system-ui,sans-serif;--body:'DM Sans',system-ui,sans-serif;--gris:#6E6551;}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:var(--body);background:var(--creme);color:var(--noir);line-height:1.45;font-size:15px}
+  h1,h2,h3{font-family:var(--display);line-height:1.1}
+  .wrap{max-width:980px;margin:0 auto;padding:0 16px 60px}
+  header{background:var(--bleu);color:#fff;padding:16px 0;border-bottom:5px solid var(--noir);margin-bottom:22px}
+  header .wrap{padding-bottom:0;display:flex;align-items:center;justify-content:space-between;gap:12px}
+  header h1{font-size:1.25rem}
+  header small{display:block;font-size:.72rem;font-weight:600;letter-spacing:.2em;text-transform:uppercase;opacity:.75}
+  .card{background:#fff;border:3px solid var(--noir);border-radius:18px;box-shadow:6px 6px 0 var(--jaune);padding:22px 20px;margin-bottom:20px}
+  .card h2{font-size:1.1rem;color:var(--bleu);margin-bottom:14px}
+  label{display:block;font-weight:700;font-size:.82rem;margin:12px 0 5px}
+  input,select,textarea{width:100%;padding:10px 12px;border:2px solid #d8cdb0;border-radius:10px;
+    font-family:var(--body);font-size:.95rem;background:#fdfaf1;color:var(--noir)}
+  input:focus,select:focus{outline:none;border-color:var(--bleu)}
+  button{font-family:var(--display);font-weight:700;cursor:pointer;border-radius:10px;border:2px solid var(--noir);
+    padding:9px 16px;font-size:.9rem;background:var(--jaune);color:var(--noir)}
+  button:active{transform:translate(1px,1px)}
+  button:disabled{opacity:.45;cursor:not-allowed}
+  button.primaire{background:var(--bleu);color:#fff}
+  button.danger{background:#fff;color:var(--rouge);border-color:var(--rouge)}
+  button.fin{padding:5px 10px;font-size:.78rem;border-width:2px}
+  button:focus-visible,input:focus-visible,select:focus-visible,.jour:focus-visible{outline:3px solid var(--bleu);outline-offset:2px}
+  .onglets{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:18px}
+  .onglets button{background:#fff;border-color:#d8cdb0;color:var(--gris)}
+  .onglets button.actif{background:var(--noir);border-color:var(--noir);color:var(--jaune)}
+  .lignes{display:flex;flex-direction:column;gap:9px}
+  .depart{border:2px solid #e4dcc4;border-radius:12px;padding:12px 14px;background:#fdfaf1}
+  .depart.plein{border-color:var(--rouge);background:#fdf1ef}
+  .depart.ferme{border-color:#c9c2b2;background:#f2eee2;opacity:.85}
+  .depart .haut{display:flex;align-items:baseline;justify-content:space-between;gap:10px;flex-wrap:wrap}
+  .depart .quand{font-family:var(--display);font-weight:700;font-size:1rem;color:var(--bleu)}
+  .depart .compte{font-family:var(--display);font-weight:700;font-size:.9rem}
+  .jauge{height:8px;border-radius:5px;background:#e8e1cd;margin:9px 0 4px;overflow:hidden}
+  .jauge i{display:block;height:100%;background:var(--vert)}
+  .jauge i.chaud{background:var(--jaune)}
+  .jauge i.plein{background:var(--rouge)}
+  .pax{margin-top:10px;border-top:1px dashed #d8cdb0;padding-top:9px;font-size:.86rem}
+  .pax div{padding:4px 0;display:flex;gap:8px;flex-wrap:wrap;align-items:baseline}
+  .pax b{font-weight:700}
+  .pax a{color:var(--bleu)}
+  .etiq{font-family:var(--display);font-size:.68rem;font-weight:700;padding:2px 7px;border-radius:20px;white-space:nowrap}
+  .etiq.paye{background:#e4f5ec;color:var(--vert)}
+  .etiq.en_attente{background:#fef3d6;color:#a9791a}
+  .etiq.expire,.etiq.annule{background:#eee;color:#8a8577}
+  .tableau{width:100%;border-collapse:collapse;font-size:.86rem}
+  .tableau th{text-align:left;font-family:var(--display);font-size:.75rem;text-transform:uppercase;
+    letter-spacing:.05em;color:var(--gris);padding:7px 8px;border-bottom:2px solid #e4dcc4}
+  .tableau td{padding:9px 8px;border-bottom:1px solid #efe8d6;vertical-align:middle}
+  .tableau tr:last-child td{border-bottom:none}
+  .defile{overflow-x:auto;-webkit-overflow-scrolling:touch}
+  .filtres{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-bottom:14px}
+  .filtres > div{flex:1;min-width:150px}
+  .filtres label{margin-top:0}
+  .msg{padding:11px 14px;border-radius:10px;font-weight:700;font-size:.88rem;margin:12px 0;display:none}
+  .msg.ok{background:#e4f5ec;color:var(--vert);display:block}
+  .msg.ko{background:#fde3e0;color:var(--rouge);display:block}
+  .msg.info{background:#eef1fb;color:var(--bleu);display:block}
+  .vide{text-align:center;color:var(--gris);padding:26px 10px;font-size:.9rem}
+  .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:11px;margin-bottom:18px}
+  .stat{background:#fff;border:2px solid var(--noir);border-radius:14px;padding:13px 15px}
+  .stat b{display:block;font-family:var(--display);font-size:1.7rem;color:var(--bleu);line-height:1.1}
+  .stat span{font-size:.76rem;color:var(--gris);font-weight:700;text-transform:uppercase;letter-spacing:.04em}
+  .connexion{max-width:390px;margin:60px auto}
+  .cacher{display:none}
+  @media (max-width:560px){
+    .card{padding:18px 14px}
+    header h1{font-size:1.05rem}
+    .onglets button{flex:1;padding:9px 6px;font-size:.82rem}
+  }
+</style>
+</head>
+<body>
+
+<!-- ===================== CONNEXION ===================== -->
+<div id="ecranConnexion" class="wrap connexion">
+  <div class="card">
+    <h2>Administration</h2>
+    <div style="font-size:.86rem;color:var(--gris);margin-bottom:6px">Car Rapid Ride &middot; acces reserve</div>
+    <label for="email">E-mail</label>
+    <input type="email" id="email" autocomplete="username">
+    <label for="mdp">Mot de passe</label>
+    <input type="password" id="mdp" autocomplete="current-password"
+           onkeydown="if(event.key==='Enter')seConnecter()">
+    <div class="msg" id="msgConnexion"></div>
+    <button class="primaire" style="width:100%;margin-top:16px" onclick="seConnecter()">Se connecter</button>
+  </div>
+</div>
+
+<!-- ===================== APPLICATION ===================== -->
+<div id="ecranApp" class="cacher">
+  <header>
+    <div class="wrap">
+      <div>
+        <small>Car Rapid Ride</small>
+        <h1>Administration</h1>
+      </div>
+      <div style="text-align:right">
+        <div style="font-size:.78rem;opacity:.85" id="qui">&nbsp;</div>
+        <button class="fin" style="margin-top:6px" onclick="seDeconnecter()">Quitter</button>
+      </div>
+    </div>
+  </header>
+
+  <div class="wrap">
+    <div class="onglets">
+      <button id="ong-departs"      class="actif" onclick="ouvrir('departs')">Departs</button>
+      <button id="ong-reservations"           onclick="ouvrir('reservations')">Reservations</button>
+      <button id="ong-promos"                 onclick="ouvrir('promos')">Codes promo</button>
+      <button id="ong-fermetures"             onclick="ouvrir('fermetures')">Fermetures</button>
+    </div>
+    <div class="msg" id="msgGlobal"></div>
+
+    <!-- ---------- DEPARTS ---------- -->
+    <section id="vue-departs">
+      <div class="stats" id="stats"></div>
+      <div class="card">
+        <h2>Departs a venir</h2>
+        <div class="filtres">
+          <div>
+            <label for="horizon">Periode</label>
+            <select id="horizon" onchange="chargerDeparts()">
+              <option value="7">7 prochains jours</option>
+              <option value="14" selected>14 prochains jours</option>
+              <option value="30">30 prochains jours</option>
+            </select>
+          </div>
+          <div>
+            <label for="filtreVides">Affichage</label>
+            <select id="filtreVides" onchange="chargerDeparts()">
+              <option value="occupes" selected>Uniquement les departs avec reservation</option>
+              <option value="tous">Tous les departs</option>
+            </select>
+          </div>
+        </div>
+        <div class="lignes" id="listeDeparts"><div class="vide">Chargement...</div></div>
+      </div>
+    </section>
+
+    <!-- ---------- RESERVATIONS ---------- -->
+    <section id="vue-reservations" class="cacher">
+      <div class="card">
+        <h2>Reservations</h2>
+        <div class="filtres">
+          <div style="flex:2">
+            <label for="recherche">Recherche</label>
+            <input type="text" id="recherche" placeholder="reference, nom, e-mail ou telephone"
+                   onkeydown="if(event.key==='Enter')chargerReservations()">
+          </div>
+          <div>
+            <label for="filtreStatut">Statut</label>
+            <select id="filtreStatut" onchange="chargerReservations()">
+              <option value="">Tous</option>
+              <option value="paye">Payees</option>
+              <option value="en_attente">En attente</option>
+              <option value="expire">Expirees</option>
+              <option value="annule">Annulees</option>
+            </select>
+          </div>
+          <div>
+            <label for="filtreDepuis">A partir du</label>
+            <input type="date" id="filtreDepuis" onchange="chargerReservations()">
+          </div>
+          <div style="flex:0">
+            <button onclick="chargerReservations()">Filtrer</button>
+          </div>
+          <div style="flex:0">
+            <button class="fin" onclick="exporterCSV()">Export CSV</button>
+          </div>
+        </div>
+        <div class="defile">
+          <table class="tableau">
+            <thead><tr>
+              <th>Reference</th><th>Depart</th><th>Client</th><th>Pax</th>
+              <th>Montant</th><th>Code</th><th>Statut</th><th></th>
+            </tr></thead>
+            <tbody id="corpsReservations"><tr><td colspan="8" class="vide">Chargement...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ---------- CODES PROMO ---------- -->
+    <section id="vue-promos" class="cacher">
+      <div class="card">
+        <h2>Nouveau code</h2>
+        <div class="filtres">
+          <div><label for="pCode">Code</label>
+            <input type="text" id="pCode" placeholder="ETE26" style="text-transform:uppercase"></div>
+          <div><label for="pLibelle">Libelle interne</label>
+            <input type="text" id="pLibelle" placeholder="Offre ete"></div>
+          <div><label for="pType">Type</label>
+            <select id="pType"><option value="pourcent">Pourcentage</option><option value="montant">Montant en euros</option></select></div>
+          <div><label for="pValeur">Valeur</label>
+            <input type="number" id="pValeur" min="1" step="0.5" placeholder="10"></div>
+          <div><label for="pMinPlaces">Passagers min.</label>
+            <input type="number" id="pMinPlaces" min="1" value="1"></div>
+          <div><label for="pMaxUsages">Utilisations max.</label>
+            <input type="number" id="pMaxUsages" min="1" placeholder="illimite"></div>
+          <div><label for="pFin">Expire le</label>
+            <input type="date" id="pFin"></div>
+          <div style="flex:0"><button class="primaire" onclick="creerPromo()">Creer</button></div>
+        </div>
+        <div class="msg" id="msgPromo"></div>
+      </div>
+      <div class="card">
+        <h2>Codes existants</h2>
+        <div class="defile">
+          <table class="tableau">
+            <thead><tr>
+              <th>Code</th><th>Remise</th><th>Conditions</th><th>Utilisations</th><th>Etat</th><th></th>
+            </tr></thead>
+            <tbody id="corpsPromos"><tr><td colspan="6" class="vide">Chargement...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ---------- FERMETURES ---------- -->
+    <section id="vue-fermetures" class="cacher">
+      <div class="card">
+        <h2>Fermer un depart</h2>
+        <div style="font-size:.86rem;color:var(--gris)">
+          Un depart ferme affiche 0 place sur le calendrier et refuse toute nouvelle reservation.
+          Les reservations deja payees ne sont pas touchees : previens les clients toi-meme.
+        </div>
+        <div class="filtres" style="margin-top:12px">
+          <div><label for="fDate">Date</label><input type="date" id="fDate"></div>
+          <div><label for="fCreneau">Creneau</label>
+            <select id="fCreneau">
+              <option value="Tous">Toute la journee</option>
+              <option value="Matin">Matin seulement</option>
+              <option value="Apres-midi">Apres-midi seulement</option>
+            </select></div>
+          <div style="flex:2"><label for="fMotif">Motif</label>
+            <input type="text" id="fMotif" placeholder="Vehicule en revision"></div>
+          <div style="flex:0"><button class="primaire" onclick="creerFermeture()">Fermer</button></div>
+        </div>
+        <div class="msg" id="msgFermeture"></div>
+      </div>
+      <div class="card">
+        <h2>Fermetures enregistrees</h2>
+        <div class="defile">
+          <table class="tableau">
+            <thead><tr><th>Date</th><th>Creneau</th><th>Motif</th><th></th></tr></thead>
+            <tbody id="corpsFermetures"><tr><td colspan="4" class="vide">Chargement...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+/* =================== CONFIG =================== */
+var SUPABASE_URL = "https://ubclmpicdviguubqdsfl.supabase.co";
+var SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InViY2xtcGljZHZpZ3V1YnFkc2ZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODUxMDIxNzEsImV4cCI6MjEwMDY3ODE3MX0.D0iTFWa9I-add6tpI-MiXgyCuep01kRVTczB2XDN-48";
+var CAP = 12;
+/* ============================================= */
+
+var sb = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY) : null;
+var derniereListe = [];
+
+/* ---------- utilitaires ---------- */
+function $(id){ return document.getElementById(id); }
+function iso(d){ var m=String(d.getMonth()+1), j=String(d.getDate());
+  return d.getFullYear()+'-'+(m.length<2?'0'+m:m)+'-'+(j.length<2?'0'+j:j); }
+function eur(n){ n=Math.round((Number(n)||0)*100)/100;
+  return (n%1===0?String(n):n.toFixed(2).replace('.',','))+'\u20ac'; }
+function txt(s){ return String(s==null?'':s)
+  .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function dateFR(s){
+  var d=new Date(s+'T12:00:00');
+  return isNaN(d)? s : d.toLocaleDateString('fr-FR',{weekday:'short',day:'numeric',month:'short'});
+}
+function dire(id, texte, genre){
+  var e=$(id); e.textContent=texte; e.className='msg '+(genre||'info');
+  if(genre==='ok') setTimeout(function(){ e.className='msg'; }, 4000);
+}
+
+/* ---------- connexion ---------- */
+async function seConnecter(){
+  var email=$('email').value.trim(), mdp=$('mdp').value;
+  if(!email||!mdp){ dire('msgConnexion','Renseignez l\'e-mail et le mot de passe.','ko'); return; }
+  dire('msgConnexion','Connexion...','info');
+  var r=await sb.auth.signInWithPassword({email:email, password:mdp});
+  if(r.error){ dire('msgConnexion','Identifiants refuses.','ko'); return; }
+  demarrer();
+}
+
+async function seDeconnecter(){
+  await sb.auth.signOut();
+  location.reload();
+}
+
+async function demarrer(){
+  var s=await sb.auth.getSession();
+  var session=s.data.session;
+  if(!session){ $('ecranConnexion').classList.remove('cacher'); $('ecranApp').classList.add('cacher'); return; }
+
+  var a=await sb.rpc('est_admin');
+  if(a.error || a.data!==true){
+    await sb.auth.signOut();
+    $('ecranConnexion').classList.remove('cacher');
+    dire('msgConnexion','Ce compte n\'a pas les droits d\'administration.','ko');
+    return;
+  }
+  $('ecranConnexion').classList.add('cacher');
+  $('ecranApp').classList.remove('cacher');
+  $('qui').textContent = session.user.email;
+  $('filtreDepuis').value = iso(new Date());
+  $('fDate').min = iso(new Date());
+  chargerDeparts();
+}
+
+/* ---------- navigation ---------- */
+function ouvrir(nom){
+  ['departs','reservations','promos','fermetures'].forEach(function(v){
+    $('vue-'+v).classList.toggle('cacher', v!==nom);
+    $('ong-'+v).classList.toggle('actif', v===nom);
+  });
+  if(nom==='departs')      chargerDeparts();
+  if(nom==='reservations') chargerReservations();
+  if(nom==='promos')       chargerPromos();
+  if(nom==='fermetures')   chargerFermetures();
+}
+
+/* =================== DEPARTS =================== */
+async function chargerDeparts(){
+  var boite=$('listeDeparts');
+  boite.innerHTML='<div class="vide">Chargement...</div>';
+  var jours=parseInt($('horizon').value)||14;
+  var d1=new Date(), d2=new Date(); d2.setDate(d2.getDate()+jours);
+
+  var r=await sb.from('reservations').select('*')
+        .gte('date',iso(d1)).lte('date',iso(d2))
+        .order('date',{ascending:true});
+  if(r.error){ dire('msgGlobal','Lecture impossible : '+r.error.message,'ko'); boite.innerHTML=''; return; }
+
+  var f=await sb.from('fermetures').select('*').gte('date',iso(d1)).lte('date',iso(d2));
+  var fermes={};
+  (f.data||[]).forEach(function(x){
+    if(x.creneau==='Tous'){ fermes[x.date+'|Matin']=x.motif||'Ferme'; fermes[x.date+'|Apres-midi']=x.motif||'Ferme'; }
+    else fermes[x.date+'|'+x.creneau]=x.motif||'Ferme';
+  });
+
+  // regroupement par depart
+  var groupes={};
+  (r.data||[]).forEach(function(x){
+    var k=x.date+'|'+x.creneau;
+    if(!groupes[k]) groupes[k]={date:x.date,creneau:x.creneau,prises:0,lignes:[],ca:0};
+    groupes[k].lignes.push(x);
+    if(x.statut==='paye'){ groupes[k].prises+=x.places; groupes[k].ca+=Number(x.montant)||0; }
+    else if(x.statut==='en_attente'){ groupes[k].prises+=x.places; }
+  });
+
+  // statistiques
+  var payees=(r.data||[]).filter(function(x){return x.statut==='paye';});
+  var ca=payees.reduce(function(t,x){return t+(Number(x.montant)||0);},0);
+  var pax=payees.reduce(function(t,x){return t+(x.places||0);},0);
+  var attente=(r.data||[]).filter(function(x){return x.statut==='en_attente';}).length;
+  $('stats').innerHTML=
+    stat(payees.length,'reservations payees')+
+    stat(pax,'passagers attendus')+
+    stat(eur(ca),'chiffre d\'affaires')+
+    stat(attente,'en attente de paiement');
+
+  // affichage
+  var tout=$('filtreVides').value==='tous';
+  var cles=[];
+  if(tout){
+    for(var i=0;i<jours;i++){
+      var d=new Date(); d.setDate(d.getDate()+i);
+      cles.push(iso(d)+'|Matin'); cles.push(iso(d)+'|Apres-midi');
+    }
+  } else {
+    cles=Object.keys(groupes).sort(function(a,b){ return a<b?-1:1; });
+    Object.keys(fermes).forEach(function(k){ if(cles.indexOf(k)<0) cles.push(k); });
+    cles.sort(function(a,b){ return a<b?-1:1; });
+  }
+
+  if(!cles.length){ boite.innerHTML='<div class="vide">Aucune reservation sur la periode.</div>'; return; }
+
+  boite.innerHTML=cles.map(function(k){
+    var g=groupes[k]||{date:k.split('|')[0],creneau:k.split('|')[1],prises:0,lignes:[],ca:0};
+    var motif=fermes[k];
+    var libres=motif?0:Math.max(0,CAP-g.prises);
+    var pct=Math.min(100,Math.round(g.prises/CAP*100));
+    var classe=motif?'ferme':(libres<=0?'plein':'');
+    var barre=libres<=0?'plein':(libres<=4?'chaud':'');
+    var heure=g.creneau==='Matin'?'9h':'14h';
+    return '<div class="depart '+classe+'">'+
+      '<div class="haut">'+
+        '<span class="quand">'+txt(dateFR(g.date))+' &middot; '+txt(g.creneau)+' ('+heure+')</span>'+
+        '<span class="compte" style="color:'+(motif?'var(--gris)':(libres<=0?'var(--rouge)':'var(--vert)'))+'">'+
+          (motif? 'Ferme : '+txt(motif) : g.prises+'/'+CAP+' places &middot; '+eur(g.ca))+
+        '</span>'+
+      '</div>'+
+      '<div class="jauge"><i class="'+barre+'" style="width:'+pct+'%"></i></div>'+
+      (g.lignes.length? '<div class="pax">'+g.lignes.map(ligneClient).join('')+'</div>' : '')+
+    '</div>';
+  }).join('');
+}
+
+function stat(v,l){ return '<div class="stat"><b>'+txt(v)+'</b><span>'+txt(l)+'</span></div>'; }
+
+function ligneClient(x){
+  return '<div>'+
+    '<span class="etiq '+txt(x.statut)+'">'+txt(x.statut.replace('_',' '))+'</span>'+
+    '<b>'+txt(x.nom||'(sans nom)')+'</b>'+
+    '<span>'+x.adultes+' ad. '+x.enfants+' enf.</span>'+
+    (x.tel? '<a href="https://wa.me/'+txt(String(x.tel).replace(/[^0-9]/g,''))+'">'+txt(x.tel)+'</a>':'')+
+    (x.email? '<a href="mailto:'+txt(x.email)+'">'+txt(x.email)+'</a>':'')+
+    '<span style="color:var(--gris)">'+txt(x.ref)+'</span>'+
+    (x.promo? '<span class="etiq" style="background:#eef1fb;color:var(--bleu)">'+txt(x.promo)+' &minus;'+eur(x.remise)+'</span>':'')+
+  '</div>';
+}
+
+/* =================== RESERVATIONS =================== */
+async function chargerReservations(){
+  var corps=$('corpsReservations');
+  corps.innerHTML='<tr><td colspan="8" class="vide">Chargement...</td></tr>';
+
+  var q=sb.from('reservations').select('*').order('date',{ascending:true}).limit(300);
+  var statut=$('filtreStatut').value; if(statut) q=q.eq('statut',statut);
+  var depuis=$('filtreDepuis').value;  if(depuis) q=q.gte('date',depuis);
+  var cherche=$('recherche').value.trim();
+  if(cherche){
+    var c='%'+cherche.replace(/[,%]/g,'')+'%';
+    q=q.or('ref.ilike.'+c+',nom.ilike.'+c+',email.ilike.'+c+',tel.ilike.'+c);
+  }
+
+  var r=await q;
+  if(r.error){ corps.innerHTML='<tr><td colspan="8" class="vide">Erreur : '+txt(r.error.message)+'</td></tr>'; return; }
+  derniereListe=r.data||[];
+  if(!derniereListe.length){ corps.innerHTML='<tr><td colspan="8" class="vide">Aucune reservation.</td></tr>'; return; }
+
+  corps.innerHTML=derniereListe.map(function(x){
+    return '<tr>'+
+      '<td style="white-space:nowrap">'+txt(x.ref)+'</td>'+
+      '<td style="white-space:nowrap">'+txt(dateFR(x.date))+'<br><span style="color:var(--gris);font-size:.8rem">'+txt(x.creneau)+'</span></td>'+
+      '<td>'+txt(x.nom||'-')+'<br><span style="color:var(--gris);font-size:.8rem">'+txt(x.email||'')+'</span></td>'+
+      '<td style="white-space:nowrap">'+x.adultes+'+'+x.enfants+'</td>'+
+      '<td style="white-space:nowrap">'+eur(x.montant)+'</td>'+
+      '<td>'+(x.promo? txt(x.promo) : '-')+'</td>'+
+      '<td><span class="etiq '+txt(x.statut)+'">'+txt(x.statut.replace('_',' '))+'</span></td>'+
+      '<td style="white-space:nowrap">'+
+        (x.statut!=='paye'  ? '<button class="fin" onclick="changerStatut(\''+txt(x.ref)+'\',\'paye\')">Payee</button> ' : '')+
+        (x.statut!=='annule'? '<button class="fin danger" onclick="changerStatut(\''+txt(x.ref)+'\',\'annule\')">Annuler</button>' : '')+
+      '</td>'+
+    '</tr>';
+  }).join('');
+}
+
+async function changerStatut(ref, statut){
+  var mot = statut==='annule' ? 'Annuler' : 'Marquer payee';
+  if(!confirm(mot+' la reservation '+ref+' ?')) return;
+  var r=await sb.from('reservations').update({statut:statut}).eq('ref',ref);
+  if(r.error){ dire('msgGlobal','Modification refusee : '+r.error.message,'ko'); return; }
+  dire('msgGlobal','Reservation '+ref+' mise a jour.','ok');
+  chargerReservations();
+}
+
+function exporterCSV(){
+  if(!derniereListe.length){ dire('msgGlobal','Rien a exporter.','ko'); return; }
+  var cols=['ref','date','creneau','nom','email','tel','adultes','enfants','places','montant','promo','remise','statut','cree_le'];
+  var lignes=[cols.join(';')].concat(derniereListe.map(function(x){
+    return cols.map(function(c){
+      var v=x[c]==null?'':String(x[c]);
+      return /[;"\n]/.test(v) ? '"'+v.replace(/"/g,'""')+'"' : v;
+    }).join(';');
+  }));
+  var blob=new Blob(['\ufeff'+lignes.join('\r\n')],{type:'text/csv;charset=utf-8'});
+  var a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download='reservations-'+iso(new Date())+'.csv';
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+/* =================== CODES PROMO =================== */
+async function chargerPromos(){
+  var corps=$('corpsPromos');
+  corps.innerHTML='<tr><td colspan="6" class="vide">Chargement...</td></tr>';
+  var r=await sb.from('promo_codes').select('*').order('cree_le',{ascending:false});
+  if(r.error){ corps.innerHTML='<tr><td colspan="6" class="vide">Erreur : '+txt(r.error.message)+'</td></tr>'; return; }
+  if(!r.data.length){ corps.innerHTML='<tr><td colspan="6" class="vide">Aucun code.</td></tr>'; return; }
+
+  var aujourdhui=iso(new Date());
+  corps.innerHTML=r.data.map(function(p){
+    var expire = p.fin && p.fin < aujourdhui;
+    var epuise = p.max_usages!=null && p.usages>=p.max_usages;
+    var vivant = p.actif && !expire && !epuise;
+    var conditions=[];
+    if(p.min_places>1) conditions.push('des '+p.min_places+' passagers');
+    if(p.fin) conditions.push('jusqu\'au '+dateFR(p.fin));
+    if(p.debut) conditions.push('a partir du '+dateFR(p.debut));
+    return '<tr>'+
+      '<td><b>'+txt(p.code)+'</b><br><span style="color:var(--gris);font-size:.8rem">'+txt(p.libelle||'')+'</span></td>'+
+      '<td style="white-space:nowrap">'+(p.type==='pourcent'? p.valeur+'%' : eur(p.valeur))+'</td>'+
+      '<td>'+(conditions.length? txt(conditions.join(' &middot; ')) : '-')+'</td>'+
+      '<td style="white-space:nowrap">'+p.usages+(p.max_usages!=null? ' / '+p.max_usages : '')+'</td>'+
+      '<td><span class="etiq '+(vivant?'paye':'expire')+'">'+
+        (vivant?'actif':(expire?'expire':(epuise?'epuise':'desactive')))+'</span></td>'+
+      '<td style="white-space:nowrap">'+
+        '<button class="fin" onclick="basculerPromo(\''+txt(p.code)+'\','+(p.actif?'false':'true')+')">'+
+          (p.actif?'Desactiver':'Activer')+'</button> '+
+        '<button class="fin danger" onclick="supprimerPromo(\''+txt(p.code)+'\')">Supprimer</button>'+
+      '</td>'+
+    '</tr>';
+  }).join('');
+}
+
+async function creerPromo(){
+  var code=$('pCode').value.trim().toUpperCase();
+  var valeur=parseFloat($('pValeur').value);
+  if(!code){ dire('msgPromo','Indiquez un code.','ko'); return; }
+  if(!(valeur>0)){ dire('msgPromo','Indiquez une valeur superieure a 0.','ko'); return; }
+  var type=$('pType').value;
+  if(type==='pourcent' && valeur>100){ dire('msgPromo','Un pourcentage ne peut pas depasser 100.','ko'); return; }
+
+  var ligne={
+    code:code, libelle:$('pLibelle').value.trim()||null, type:type, valeur:valeur,
+    min_places:parseInt($('pMinPlaces').value)||1,
+    max_usages:$('pMaxUsages').value? parseInt($('pMaxUsages').value) : null,
+    fin:$('pFin').value||null, actif:true
+  };
+  var r=await sb.from('promo_codes').insert(ligne);
+  if(r.error){
+    dire('msgPromo', r.error.code==='23505' ? 'Ce code existe deja.' : 'Creation refusee : '+r.error.message, 'ko');
+    return;
+  }
+  dire('msgPromo','Code '+code+' cree.','ok');
+  ['pCode','pLibelle','pValeur','pMaxUsages','pFin'].forEach(function(i){ $(i).value=''; });
+  $('pMinPlaces').value=1;
+  chargerPromos();
+}
+
+async function basculerPromo(code, actif){
+  var r=await sb.from('promo_codes').update({actif:actif}).eq('code',code);
+  if(r.error){ dire('msgGlobal','Modification refusee : '+r.error.message,'ko'); return; }
+  chargerPromos();
+}
+
+async function supprimerPromo(code){
+  if(!confirm('Supprimer definitivement le code '+code+' ?\n\nLes reservations qui l\'ont utilise gardent leur trace.')) return;
+  var r=await sb.from('promo_codes').delete().eq('code',code);
+  if(r.error){ dire('msgGlobal','Suppression refusee : '+r.error.message,'ko'); return; }
+  dire('msgGlobal','Code '+code+' supprime.','ok');
+  chargerPromos();
+}
+
+/* =================== FERMETURES =================== */
+async function chargerFermetures(){
+  var corps=$('corpsFermetures');
+  corps.innerHTML='<tr><td colspan="4" class="vide">Chargement...</td></tr>';
+  var r=await sb.from('fermetures').select('*').gte('date',iso(new Date())).order('date',{ascending:true});
+  if(r.error){ corps.innerHTML='<tr><td colspan="4" class="vide">Erreur : '+txt(r.error.message)+'</td></tr>'; return; }
+  if(!r.data.length){ corps.innerHTML='<tr><td colspan="4" class="vide">Aucune fermeture a venir.</td></tr>'; return; }
+  corps.innerHTML=r.data.map(function(f){
+    return '<tr>'+
+      '<td>'+txt(dateFR(f.date))+'</td>'+
+      '<td>'+txt(f.creneau==='Tous'?'Toute la journee':f.creneau)+'</td>'+
+      '<td>'+txt(f.motif||'-')+'</td>'+
+      '<td><button class="fin danger" onclick="supprimerFermeture('+f.id+')">Rouvrir</button></td>'+
+    '</tr>';
+  }).join('');
+}
+
+async function creerFermeture(){
+  var date=$('fDate').value;
+  if(!date){ dire('msgFermeture','Choisissez une date.','ko'); return; }
+  var r=await sb.from('fermetures').insert({
+    date:date, creneau:$('fCreneau').value, motif:$('fMotif').value.trim()||null
+  });
+  if(r.error){
+    dire('msgFermeture', r.error.code==='23505' ? 'Ce depart est deja ferme.' : 'Fermeture refusee : '+r.error.message, 'ko');
+    return;
+  }
+  dire('msgFermeture','Depart ferme.','ok');
+  $('fMotif').value='';
+  chargerFermetures();
+}
+
+async function supprimerFermeture(id){
+  if(!confirm('Rouvrir ce depart a la reservation ?')) return;
+  var r=await sb.from('fermetures').delete().eq('id',id);
+  if(r.error){ dire('msgGlobal','Reouverture refusee : '+r.error.message,'ko'); return; }
+  chargerFermetures();
+}
+
+/* =================== INIT =================== */
+if(!sb){
+  $('msgConnexion').textContent='Bibliotheque Supabase indisponible. Verifiez votre connexion.';
+  $('msgConnexion').className='msg ko';
+} else {
+  demarrer();
+}
+</script>
+</body>
+</html>
