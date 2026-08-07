@@ -4,6 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Réserver — Car Rapid Ride</title>
+<link rel="icon" type="image/png" href="/favicon.png">
+<link rel="apple-touch-icon" href="/favicon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" media="print" onload="this.media='all'" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,700;1,9..40,400&display=swap">
@@ -190,7 +192,7 @@
       </div>
       <span class="amt" id="total">60&euro;</span>
     </div>
-    <div class="included">Verre de cloture inclus dans le prix</div>
+    <div class="included">Verre de clôture offert</div>
 
     <a class="btn-pay" id="payBtn" href="#" onclick="return goPay()">Payer et reserver &rarr;</a>
     <div class="secure">&#128274; Places en temps reel &middot; paiement securise par carte via Stripe</div>
@@ -345,9 +347,14 @@
       }});
 
       if(r.error){
-        var msg='';
+        var msg='', code='';
+        try{ code=r.error.context.status; }catch(_e){}
         try{ msg=(await r.error.context.json()).error; }catch(_e){}
-        throw new Error(msg||'Service indisponible');
+        if(!msg){
+          try{ msg=(await r.error.context.text()).slice(0,300); }catch(_e){}
+        }
+        if(!msg) msg=(r.error.name||'')+' : '+(r.error.message||'appel bloque (CORS ou reseau)');
+        throw new Error('[code '+(code||'aucun')+'] '+msg);
       }
       if(!r.data||!r.data.url){ throw new Error('Reponse invalide'); }
 

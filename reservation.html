@@ -347,9 +347,14 @@
       }});
 
       if(r.error){
-        var msg='';
+        var msg='', code='';
+        try{ code=r.error.context.status; }catch(_e){}
         try{ msg=(await r.error.context.json()).error; }catch(_e){}
-        throw new Error(msg||'Service indisponible');
+        if(!msg){
+          try{ msg=(await r.error.context.text()).slice(0,300); }catch(_e){}
+        }
+        if(!msg) msg=(r.error.name||'')+' : '+(r.error.message||'appel bloque (CORS ou reseau)');
+        throw new Error('[code '+(code||'aucun')+'] '+msg);
       }
       if(!r.data||!r.data.url){ throw new Error('Reponse invalide'); }
 

@@ -121,6 +121,7 @@
       <button id="ong-departs"      class="actif" onclick="ouvrir('departs')">Departs</button>
       <button id="ong-reservations"           onclick="ouvrir('reservations')">Reservations</button>
       <button id="ong-promos"                 onclick="ouvrir('promos')">Codes promo</button>
+      <button id="ong-partenaires"            onclick="ouvrir('partenaires')">Partenaires</button>
       <button id="ong-fermetures"             onclick="ouvrir('fermetures')">Fermetures</button>
     </div>
     <div class="msg" id="msgGlobal"></div>
@@ -231,6 +232,63 @@
     </section>
 
     <!-- ---------- FERMETURES ---------- -->
+    <section id="vue-partenaires" class="cacher">
+      <div class="card">
+        <h2>Nouveau partenaire</h2>
+        <div class="filtres">
+          <div><label for="aNom">Raison sociale</label>
+            <input type="text" id="aNom" placeholder="Jalan"></div>
+          <div><label for="aType">Type</label>
+            <select id="aType">
+              <option value="agence">Agence / tour-operateur</option>
+              <option value="hotel">Hotel / residence</option>
+              <option value="plateforme">Plateforme d'activites</option>
+              <option value="autre">Autre</option>
+            </select></div>
+          <div><label for="aPays">Pays</label>
+            <input type="text" id="aPays" placeholder="Belgique"></div>
+          <div><label for="aContact">Interlocuteur</label>
+            <input type="text" id="aContact" placeholder="Nom du contact"></div>
+          <div><label for="aEmail">E-mail</label>
+            <input type="email" id="aEmail" placeholder="contact@agence.be"></div>
+          <div><label for="aTel">Telephone</label>
+            <input type="text" id="aTel" placeholder="+32 ..."></div>
+          <div><label for="aSigne">Convention signee le</label>
+            <input type="date" id="aSigne"></div>
+          <div><label for="aCommission">Commission (FCFA / place)</label>
+            <input type="number" id="aCommission" min="0" step="50" placeholder="300"></div>
+        </div>
+        <div class="filtres" style="border-top:1px solid #e6e6e6;padding-top:10px;margin-top:4px">
+          <div><label for="aCode">Code promo a creer</label>
+            <input type="text" id="aCode" placeholder="JALAN25" style="text-transform:uppercase"></div>
+          <div><label for="aRemise">Remise accordee (%)</label>
+            <input type="number" id="aRemise" min="1" max="100" step="1" value="25"></div>
+          <div style="flex:0"><button class="primaire" onclick="creerPartenaire()">Creer</button></div>
+        </div>
+        <div class="msg" id="msgPartenaire"></div>
+        <p style="font-size:.78rem;color:var(--gris);margin:6px 0 0">
+          Le code promo est cree en meme temps que le partenaire et lui reste rattache.
+          Toute reservation payee avec ce code est comptabilisee ci-dessous.</p>
+      </div>
+
+      <div class="card">
+        <h2>Partenaires et ventes <span id="nbPartenaires"
+          style="font-family:var(--body);font-weight:400;font-size:.85rem;color:var(--gris)"></span></h2>
+        <div class="defile">
+          <table class="tableau">
+            <thead><tr>
+              <th>Partenaire</th><th>Code</th><th>Reservations</th><th>Places</th>
+              <th>Chiffre d'affaires</th><th>Commission due</th><th>Derniere vente</th><th></th>
+            </tr></thead>
+            <tbody id="corpsPartenaires"><tr><td colspan="8" class="vide">Chargement...</td></tr></tbody>
+          </table>
+        </div>
+        <div style="margin-top:10px">
+          <button class="fin" onclick="exporterPartenaires()">Exporter en CSV</button>
+        </div>
+      </div>
+    </section>
+
     <section id="vue-fermetures" class="cacher">
       <div class="card">
         <h2>Fermer un depart</h2>
@@ -331,13 +389,14 @@ async function demarrer(){
 
 /* ---------- navigation ---------- */
 function ouvrir(nom){
-  ['departs','reservations','promos','fermetures'].forEach(function(v){
+  ['departs','reservations','promos','partenaires','fermetures'].forEach(function(v){
     $('vue-'+v).classList.toggle('cacher', v!==nom);
     $('ong-'+v).classList.toggle('actif', v===nom);
   });
   if(nom==='departs')      chargerDeparts();
   if(nom==='reservations') chargerReservations();
   if(nom==='promos')       chargerPromos();
+  if(nom==='partenaires')  chargerPartenaires();
   if(nom==='fermetures')   chargerFermetures();
 }
 
@@ -564,6 +623,144 @@ async function supprimerPromo(code){
   if(r.error){ dire('msgGlobal','Suppression refusee : '+r.error.message,'ko'); return; }
   dire('msgGlobal','Code '+code+' supprime.','ok');
   chargerPromos();
+}
+
+/* =================== PARTENAIRES =================== */
+var _partenaires = [];
+
+async function chargerPartenaires(){
+  var corps=$('corpsPartenaires');
+  corps.innerHTML='<tr><td colspan="8" class="vide">Chargement...</td></tr>';
+
+  var rp=await sb.from('partenaires').select('*').order('nom',{ascending:true});
+  if(rp.error){
+    corps.innerHTML='<tr><td colspan="8" class="vide">Erreur : '+txt(rp.error.message)+
+      '<br><span style="font-size:.8rem">La table \'partenaires\' existe-t-elle ? '+
+      'Executez supabase-partenaires.sql dans le SQL Editor.</span></td></tr>';
+    return;
+  }
+  if(!rp.data.length){
+    corps.innerHTML='<tr><td colspan="8" class="vide">Aucun partenaire.</td></tr>';
+    $('nbPartenaires').textContent=''; _partenaires=[]; return;
+  }
+
+  var rc=await sb.from('promo_codes').select('code,partenaire_id,valeur,type,actif');
+  var rr=await sb.from('reservations').select('promo,places,montant,cree_le')
+                 .eq('statut','paye').limit(5000);
+  var codes=(rc.data||[]), resas=(rr.data||[]);
+
+  _partenaires = rp.data.map(function(p){
+    var mes=codes.filter(function(c){ return c.partenaire_id===p.id; });
+    var listeCodes=mes.map(function(c){ return c.code; });
+    var v=resas.filter(function(r){ return r.promo && listeCodes.indexOf(r.promo)>=0; });
+    var places=v.reduce(function(a,r){ return a+(Number(r.places)||0); },0);
+    var ca=v.reduce(function(a,r){ return a+(Number(r.montant)||0); },0);
+    var derniere=v.reduce(function(a,r){ return (!a||r.cree_le>a)? r.cree_le : a; },null);
+    return {
+      id:p.id, nom:p.nom, type:p.type, pays:p.pays, actif:p.actif,
+      commission:Number(p.commission)||0,
+      codes:listeCodes, resas:v.length, places:places, ca:ca,
+      du:(Number(p.commission)||0)*places, derniere:derniere
+    };
+  });
+
+  var totalPlaces=_partenaires.reduce(function(a,p){ return a+p.places; },0);
+  var totalDu=_partenaires.reduce(function(a,p){ return a+p.du; },0);
+  $('nbPartenaires').textContent='('+_partenaires.length+' partenaires \u00b7 '+
+    totalPlaces+' places \u00b7 '+totalDu.toLocaleString('fr-FR')+' FCFA de commission)';
+
+  corps.innerHTML=_partenaires.map(function(p){
+    return '<tr'+(p.actif?'':' style="opacity:.5"')+'>'+
+      '<td><b>'+txt(p.nom)+'</b><br><span style="color:var(--gris);font-size:.8rem">'+
+        txt(p.type)+(p.pays? ' \u00b7 '+txt(p.pays):'')+'</span></td>'+
+      '<td>'+(p.codes.length? '<b>'+txt(p.codes.join(', '))+'</b>' :
+        '<span style="color:var(--gris)">aucun</span>')+'</td>'+
+      '<td style="text-align:center">'+p.resas+'</td>'+
+      '<td style="text-align:center"><b>'+p.places+'</b></td>'+
+      '<td style="white-space:nowrap">'+eur(p.ca)+'</td>'+
+      '<td style="white-space:nowrap">'+(p.commission? p.du.toLocaleString('fr-FR')+' FCFA' :
+        '<span style="color:var(--gris)">-</span>')+'</td>'+
+      '<td style="white-space:nowrap">'+(p.derniere? dateFR(String(p.derniere).slice(0,10)) :
+        '<span style="color:var(--gris)">-</span>')+'</td>'+
+      '<td style="white-space:nowrap">'+
+        '<button class="fin" onclick="basculerPartenaire('+p.id+','+(p.actif?'false':'true')+')">'+
+          (p.actif?'Desactiver':'Activer')+'</button> '+
+        '<button class="fin danger" onclick="supprimerPartenaire('+p.id+',\''+
+          txt(p.nom).replace(/'/g,"")+'\')">Supprimer</button>'+
+      '</td>'+
+    '</tr>';
+  }).join('');
+}
+
+async function creerPartenaire(){
+  var nom=$('aNom').value.trim();
+  var code=$('aCode').value.trim().toUpperCase();
+  var remise=parseFloat($('aRemise').value);
+  if(!nom){ dire('msgPartenaire','Indiquez la raison sociale.','ko'); return; }
+  if(!code){ dire('msgPartenaire','Indiquez le code promo a creer.','ko'); return; }
+  if(!(remise>0 && remise<=100)){ dire('msgPartenaire','La remise doit etre comprise entre 1 et 100.','ko'); return; }
+
+  var p=await sb.from('partenaires').insert({
+    nom:nom, type:$('aType').value, pays:$('aPays').value.trim()||null,
+    contact:$('aContact').value.trim()||null, email:$('aEmail').value.trim()||null,
+    tel:$('aTel').value.trim()||null, signe_le:$('aSigne').value||null,
+    commission:parseFloat($('aCommission').value)||0, actif:true
+  }).select('id').single();
+
+  if(p.error){
+    dire('msgPartenaire', p.error.code==='23505' ? 'Ce partenaire existe deja.'
+      : 'Creation refusee : '+p.error.message, 'ko');
+    return;
+  }
+
+  var c=await sb.from('promo_codes').insert({
+    code:code, libelle:'Partenaire '+nom, type:'pourcent', valeur:remise,
+    min_places:1, max_usages:null, fin:null, actif:true, partenaire_id:p.data.id
+  });
+  if(c.error){
+    dire('msgPartenaire','Partenaire cree, mais le code a echoue : '+
+      (c.error.code==='23505' ? 'ce code existe deja.' : c.error.message),'ko');
+    chargerPartenaires(); return;
+  }
+
+  dire('msgPartenaire','Partenaire '+nom+' cree avec le code '+code+'.','ok');
+  ['aNom','aPays','aContact','aEmail','aTel','aSigne','aCommission','aCode']
+    .forEach(function(i){ $(i).value=''; });
+  $('aRemise').value=25;
+  chargerPartenaires();
+}
+
+async function basculerPartenaire(id, actif){
+  var r=await sb.from('partenaires').update({actif:actif}).eq('id',id);
+  if(r.error){ dire('msgGlobal','Modification refusee : '+r.error.message,'ko'); return; }
+  chargerPartenaires();
+}
+
+async function supprimerPartenaire(id, nom){
+  if(!confirm('Supprimer le partenaire '+nom+' ?\n\n'+
+    'Ses codes promo restent actifs mais ne seront plus rattaches. '+
+    'Les reservations deja passees gardent leur trace.')) return;
+  var r=await sb.from('partenaires').delete().eq('id',id);
+  if(r.error){ dire('msgGlobal','Suppression refusee : '+r.error.message,'ko'); return; }
+  dire('msgGlobal','Partenaire '+nom+' supprime.','ok');
+  chargerPartenaires();
+}
+
+function exporterPartenaires(){
+  if(!_partenaires.length){ dire('msgGlobal','Rien a exporter.','ko'); return; }
+  var lignes=[['Partenaire','Type','Pays','Codes','Reservations','Places',
+               'Chiffre affaires EUR','Commission FCFA','Derniere vente']];
+  _partenaires.forEach(function(p){
+    lignes.push([p.nom,p.type,p.pays||'',p.codes.join(' '),p.resas,p.places,
+      String(p.ca).replace('.',','), p.du, p.derniere? String(p.derniere).slice(0,10):'']);
+  });
+  var csv=lignes.map(function(l){
+    return l.map(function(c){ return '"'+String(c).replace(/"/g,'""')+'"'; }).join(';');
+  }).join('\r\n');
+  var a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8'}));
+  a.download='partenaires-'+iso(new Date())+'.csv';
+  a.click();
 }
 
 /* =================== FERMETURES =================== */
