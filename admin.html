@@ -297,7 +297,8 @@
           Les reservations deja payees ne sont pas touchees : previens les clients toi-meme.
         </div>
         <div class="filtres" style="margin-top:12px">
-          <div><label for="fDate">Date</label><input type="date" id="fDate"></div>
+          <div><label for="fDate">Du</label><input type="date" id="fDate" onchange="if(!$('fFin').value||$('fFin').value<this.value)$('fFin').value=this.value"></div>
+          <div><label for="fFin">Au (inclus)</label><input type="date" id="fFin"></div>
           <div><label for="fCreneau">Creneau</label>
             <select id="fCreneau">
               <option value="Tous">Toute la journee</option>
@@ -315,7 +316,7 @@
         <div style="margin-bottom:12px"><button class="fin danger" onclick="toutRouvrir()">Tout rouvrir</button></div>
         <div class="defile">
           <table class="tableau">
-            <thead><tr><th>Date</th><th>Creneau</th><th>Motif</th><th></th></tr></thead>
+            <thead><tr><th>Date / periode</th><th>Creneau</th><th>Motif</th><th></th></tr></thead>
             <tbody id="corpsFermetures"><tr><td colspan="4" class="vide">Chargement...</td></tr></tbody>
           </table>
         </div>
@@ -771,27 +772,53 @@ async function chargerFermetures(){
   if(r.error){ corps.innerHTML='<tr><td colspan="4" class="vide">Erreur : '+txt(r.error.message)+'</td></tr>'; return; }
   $('nbFermetures').textContent = r.data.length ? '\u2014 '+r.data.length+' depart'+(r.data.length>1?'s fermes':' ferme') : '';
   if(!r.data.length){ corps.innerHTML='<tr><td colspan="4" class="vide">Aucune fermeture a venir.</td></tr>'; return; }
-  corps.innerHTML=r.data.map(function(f){
+  // les jours consecutifs avec le meme creneau et le meme motif forment une periode
+  var groupes=[], dernier={};
+  r.data.forEach(function(f){
+    var cle=f.creneau+'|'+(f.motif||''), g=dernier[cle];
+    if(g && f.date===jourSuivant(g.fin)){ g.fin=f.date; g.ids.push(f.id); }
+    else{ g={debut:f.date, fin:f.date, creneau:f.creneau, motif:f.motif, ids:[f.id]}; dernier[cle]=g; groupes.push(g); }
+  });
+  corps.innerHTML=groupes.map(function(g){
+    var quand = g.debut===g.fin ? dateFR(g.debut)
+      : 'Du '+dateFR(g.debut)+' au '+dateFR(g.fin)+' ('+g.ids.length+' jours)';
     return '<tr>'+
-      '<td>'+txt(dateFR(f.date))+'</td>'+
-      '<td>'+txt(f.creneau==='Tous'?'Toute la journee':f.creneau)+'</td>'+
-      '<td>'+txt(f.motif||'-')+'</td>'+
-      '<td><button class="fin danger" onclick="supprimerFermeture('+f.id+')">Rouvrir</button></td>'+
+      '<td>'+txt(quand)+'</td>'+
+      '<td>'+txt(g.creneau==='Tous'?'Toute la journee':g.creneau)+'</td>'+
+      '<td>'+txt(g.motif||'-')+'</td>'+
+      '<td><button class="fin danger" onclick="supprimerFermeture(['+g.ids.join(',')+'])">Rouvrir</button></td>'+
     '</tr>';
   }).join('');
 }
 
+function jourSuivant(s){ var d=new Date(s+'T12:00:00'); d.setDate(d.getDate()+1); return iso(d); }
+
 async function creerFermeture(){
-  var date=$('fDate').value;
-  if(!date){ dire('msgFermeture','Choisissez une date.','ko'); return; }
-  var r=await sb.from('fermetures').insert({
-    date:date, creneau:$('fCreneau').value, motif:$('fMotif').value.trim()||null
-  });
+  var debut=$('fDate').value, fin=$('fFin').value||debut, creneau=$('fCreneau').value;
+  if(!debut){ dire('msgFermeture','Choisissez une date de debut.','ko'); return; }
+  if(fin<debut){ dire('msgFermeture','La date de fin est avant la date de debut.','ko'); return; }
+  var jours=[];
+  for(var j=debut; j<=fin; j=jourSuivant(j)) jours.push(j);
+  if(jours.length>366){ dire('msgFermeture','Periode trop longue (366 jours maximum).','ko'); return; }
+
+  // on ne recree pas un depart deja ferme (meme creneau, ou journee entiere)
+  var ex=await sb.from('fermetures').select('date,creneau').gte('date',debut).lte('date',fin);
+  if(ex.error){ dire('msgFermeture','Lecture impossible : '+ex.error.message,'ko'); return; }
+  var deja={};
+  ex.data.forEach(function(f){ if(f.creneau===creneau||f.creneau==='Tous') deja[f.date]=1; });
+  var motif=$('fMotif').value.trim()||null;
+  var lignes=jours.filter(function(d){ return !deja[d]; })
+    .map(function(d){ return {date:d, creneau:creneau, motif:motif}; });
+  if(!lignes.length){ dire('msgFermeture', jours.length>1?'Ces departs sont deja fermes.':'Ce depart est deja ferme.', 'ko'); return; }
+
+  var r=await sb.from('fermetures').insert(lignes);
   if(r.error){
-    dire('msgFermeture', r.error.code==='23505' ? 'Ce depart est deja ferme.' : 'Fermeture refusee : '+r.error.message, 'ko');
+    dire('msgFermeture', r.error.code==='23505' ? 'Un de ces departs est deja ferme.' : 'Fermeture refusee : '+r.error.message, 'ko');
     return;
   }
-  dire('msgFermeture','Depart ferme.','ok');
+  var saut=jours.length-lignes.length;
+  dire('msgFermeture', lignes.length===1 ? 'Depart ferme.'
+    : lignes.length+' jours fermes'+(saut?' ('+saut+' deja fermes, ignores)':'')+'.', 'ok');
   $('fMotif').value='';
   chargerFermetures();
 }
@@ -808,9 +835,9 @@ async function toutRouvrir(){
   chargerFermetures();
 }
 
-async function supprimerFermeture(id){
-  if(!confirm('Rouvrir ce depart a la reservation ?')) return;
-  var r=await sb.from('fermetures').delete().eq('id',id);
+async function supprimerFermeture(ids){
+  if(!confirm(ids.length>1 ? 'Rouvrir ces '+ids.length+' jours a la reservation ?' : 'Rouvrir ce depart a la reservation ?')) return;
+  var r=await sb.from('fermetures').delete().in('id',ids);
   if(r.error){ dire('msgGlobal','Reouverture refusee : '+r.error.message,'ko'); return; }
   chargerFermetures();
 }
