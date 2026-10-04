@@ -1,0 +1,43 @@
+# Empeche la mise en pause automatique du projet Supabase (offre gratuite :
+# pause apres ~7 jours sans activite). Interroge la base 3 fois par semaine.
+# Si l'appel echoue, le workflow passe en rouge et GitHub envoie un e-mail.
+name: Supabase keepalive
+
+on:
+  schedule:
+    - cron: "23 7 * * 1,3,5"   # lundi, mercredi, vendredi vers 9h (Paris)
+  workflow_dispatch:
+
+permissions:
+  actions: write   # pour reactiver ce workflow (voir derniere etape)
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Interroger Supabase
+        env:
+          # meme URL et cle publique "anon" que reservation.html
+          SUPABASE_URL: https://ubclmpicdviguubqdsfl.supabase.co
+          SUPABASE_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InViY2xtcGljZHZpZ3V1YnFkc2ZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODUxMDIxNzEsImV4cCI6MjEwMDY3ODE3MX0.D0iTFWa9I-add6tpI-MiXgyCuep01kRVTczB2XDN-48
+        run: |
+          jour=$(date -u +%F)
+          for essai in 1 2 3; do
+            code=$(curl -s -o reponse.txt -w "%{http_code}" -X POST "$SUPABASE_URL/rest/v1/rpc/places_libres" \
+              -H "apikey: $SUPABASE_KEY" -H "Authorization: Bearer $SUPABASE_KEY" \
+              -H "Content-Type: application/json" \
+              -d "{\"p_date\":\"$jour\",\"p_creneau\":\"Matin\"}")
+            echo "Essai $essai : HTTP $code -> $(head -c 200 reponse.txt)"
+            [ "$code" = "200" ] && exit 0
+            sleep 60
+          done
+          echo "::error::Supabase ne repond pas (HTTP $code). Verifier si le projet est en pause."
+          exit 1
+
+      # GitHub desactive les workflows planifies d'un depot public apres 60 jours
+      # sans commit. Reactiver le workflow a chaque passage remet ce compteur a zero.
+      - name: Garder le workflow actif
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh api -X PUT "repos/${{ github.repository }}/actions/workflows/supabase-keepalive.yml/enable"
