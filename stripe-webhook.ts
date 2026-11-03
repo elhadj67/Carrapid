@@ -87,7 +87,7 @@ function montant(centimes: number, devise: string): string {
 }
 
 function emailHtml(r: {
-  nom: string; date: string; creneau: string; passagers: string; total: string;
+  ref: string; nom: string; date: string; creneau: string; passagers: string; total: string;
 }): string {
   const ligne = (k: string, v: string) =>
     `<tr><td style="padding:7px 0;color:#6E6551;width:115px;vertical-align:top">${k}</td>` +
@@ -97,6 +97,7 @@ function emailHtml(r: {
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#FBF3DE"><tr><td align="center" style="padding:24px 12px">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;background:#ffffff;border:3px solid #14181F;border-radius:16px;overflow:hidden">
 <tr><td style="background:#1B3FAE;padding:22px 26px;color:#ffffff">
+  <img src="https://carrapidride.com/favicon.png" width="96" height="96" alt="Car Rapid Ride" style="display:block;border:0;margin:0 0 10px">
   <div style="font-size:24px;font-weight:bold">Car Rapid Ride</div>
   <div style="font-size:14px;color:#FFC61A;font-weight:bold;margin-top:3px">Votre tour de Dakar est réservé</div>
 </td></tr>
@@ -105,6 +106,7 @@ function emailHtml(r: {
   <p style="margin:0 0 18px">Merci pour votre réservation ! Votre paiement est bien reçu et vos places sont confirmées. Vous trouverez votre facture en pièce jointe.</p>
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#FBF3DE;border-radius:12px;margin:0 0 18px"><tr><td style="padding:14px 18px">
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="font-size:15px">
+      ${ligne("Référence", r.ref)}
       ${ligne("Date", r.date)}
       ${ligne("Créneau", r.creneau)}
       ${ligne("Passagers", r.passagers)}
@@ -118,7 +120,7 @@ function emailHtml(r: {
   <p style="margin:0">À très vite à bord !<br><strong>L'équipe Car Rapid Ride</strong></p>
 </td></tr>
 <tr><td style="background:#14181F;color:#cfc8b8;padding:14px 26px;font-size:12px;text-align:center">
-  Car Rapid Ride by dd · Dakar, Sénégal · <a href="https://carrapidride.com/" style="color:#FFC61A">carrapidride.com</a>
+  D&amp;C Tech · Car Rapid Ride · Dakar, Sénégal · <a href="https://carrapidride.com/" style="color:#FFC61A">carrapidride.com</a>
 </td></tr>
 </table></td></tr></table></body></html>`;
 }
@@ -158,6 +160,7 @@ async function envoyerConfirmation(facture: any): Promise<void> {
       reply_to: Deno.env.get("EMAIL_REPLY_TO") || undefined,
       subject: `Votre tour Car Rapid Ride du ${date} est confirmé`,
       html: emailHtml({
+        ref,
         nom: resa.nom || facture.customer_name || "",
         date,
         creneau: CRENEAUX[resa.creneau] ?? resa.creneau,
