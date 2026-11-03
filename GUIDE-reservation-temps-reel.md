@@ -92,6 +92,33 @@ C'est ce qui met la place à jour automatiquement quand un client a payé.
 
 ---
 
+## Étape 7 — E-mail de confirmation avec facture
+
+Après le paiement, Stripe crée la facture et le webhook l'envoie au client par e-mail.
+
+1. **Resend** : crée un compte sur resend.com, vérifie le domaine `carrapidride.com`
+   et crée une clé API.
+2. **Secrets Supabase** : ajoute `RESEND_API_KEY`, `EMAIL_FROM`
+   (ex. `Car Rapid Ride <reservation@carrapidride.com>`) et, si besoin, `EMAIL_REPLY_TO`.
+3. **Webhook** : ajoute le code d'e-mail de `stripe-webhook.ts` à la fonction déployée.
+   Compare d'abord les deux versions : la version déployée peut contenir du code
+   absent de ce dépôt. Dans Stripe, ajoute l'événement **`invoice.paid`** à l'endpoint.
+4. **`create-checkout`** : ajoute à la création de la session Checkout, avec la
+   référence déjà passée dans `client_reference_id` :
+   ```ts
+   invoice_creation: {
+     enabled: true,
+     invoice_data: { metadata: { ref } },
+   },
+   ```
+5. **Stripe** : renseigne les informations légales de l'entreprise, qui figurent sur
+   les factures. Désactive l'envoi Stripe « Successful payments » pour éviter un
+   deuxième e-mail au client.
+6. **Test** : fais un achat en mode test Stripe, puis vérifie l'e-mail, la facture
+   et le passage de la réservation en `paye`.
+
+---
+
 ## Comment ça marche (résumé)
 
 1. Le client choisit date + créneau → la page lit Supabase et affiche les places.
