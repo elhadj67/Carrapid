@@ -64,6 +64,9 @@
   ]
 }
 </script>
+<link rel="alternate" hreflang="fr" href="https://carrapidride.com/">
+<link rel="alternate" hreflang="en" href="https://carrapidride.com/en/">
+<link rel="alternate" hreflang="x-default" href="https://carrapidride.com/">
 <link rel="icon" type="image/png" sizes="48x48" href="/favicon-48.png">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -322,6 +325,7 @@
     #busride{animation:none !important}
   }
   :focus-visible{outline:3px solid var(--rouge);outline-offset:3px}
+  .langsw{position:absolute;top:18px;right:18px;z-index:20;display:flex;gap:4px;font-family:Fredoka,sans-serif;font-weight:700;font-size:.9rem}.langsw a,.langsw span{padding:6px 11px;border-radius:10px;border:2px solid #14181F;text-decoration:none;color:#14181F;background:#fff;box-shadow:2px 2px 0 #14181F}.langsw span{background:#FFC61A}
 </style>
 </head>
 <body>
@@ -511,7 +515,9 @@
 <div class="roofband"></div>
 
 <!-- ======= HERO ======= -->
-<header class="hero">
+<header class="hero" style="position:relative">
+<nav class="langsw" aria-label="Langue"><span aria-current="page">FR</span><a href="/en/" hreflang="en" lang="en">EN</a></nav>
+
   <div class="wrap hero-grid">
     <div class="hero-copy">
       <span class="eyebrow">Découvrez Dakar autrement</span>
