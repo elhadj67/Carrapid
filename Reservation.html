@@ -94,6 +94,9 @@
   .promo-msg.ok{color:var(--vert);display:block}
   .promo-msg.ko{color:var(--rouge);display:block}
   .total .lines{display:flex;flex-direction:column;gap:1px}
+  .pricing .pill small{display:block;font-size:.85rem;font-weight:700;color:var(--noir);margin:2px 0 4px}
+  .total .amts{display:flex;flex-direction:column;align-items:flex-end;line-height:1.1}
+  .total .cfa-t{font-size:.85rem;color:#d9d3c4;margin-top:3px}
   .total .strike{display:none;font-size:.8rem;color:#9c968a;text-decoration:line-through}
   @media (prefers-reduced-motion:reduce){*{transition:none!important}}
   @media (max-width:520px){
@@ -125,8 +128,8 @@
     <h2>Votre reservation</h2>
     <div class="sub">Departs tous les jours &middot; matin (9h) et apres-midi (14h) &middot; 12 places max</div>
     <div class="pricing">
-      <div class="pill"><b>38&euro;</b><span>par adulte</span></div>
-      <div class="pill"><b>14&euro;</b><span>par enfant</span></div>
+      <div class="pill"><b>38&euro;</b><small>&asymp; 25&nbsp;000 FCFA</small><span>par adulte</span></div>
+      <div class="pill"><b>14&euro;</b><small>&asymp; 9&nbsp;000 FCFA</small><span>par enfant</span></div>
     </div>
 
     <label id="calLabel">Choisissez votre depart</label>
@@ -193,12 +196,12 @@
         <span class="lbl">Total a regler</span>
         <span class="strike" id="totalBrut"></span>
       </div>
-      <span class="amt" id="total">60&euro;</span>
+      <span class="amts"><span class="amt" id="total">60&euro;</span><span class="cfa-t" id="totalCfa"></span></span>
     </div>
     <div class="included">Verre de clôture offert</div>
 
     <a class="btn-pay" id="payBtn" href="#" onclick="return goPay()">Payer et reserver &rarr;</a>
-    <div class="secure">&#128274; Places en temps reel &middot; paiement securise par carte via Stripe</div>
+    <div class="secure">&#128274; Places en temps reel &middot; paiement securise par carte via Stripe (en euros)</div>
     <a class="wa" id="waLink" href="#" onclick="return waFallback()">&#128241; Une question ? Ecris-nous sur WhatsApp</a>
 
   </div>
@@ -240,6 +243,9 @@
     if(v+other>maxTotal){ v=Math.max(0,maxTotal-other); }
     document.getElementById(id).value=v; updateTotal();
   }
+  // franc CFA : parite fixe 1 EUR = 655,957 XOF, arrondi au millier
+  function cfa(n){var v=Math.round(n*655.957/1000)*1000;
+    return String(v).replace(/\B(?=(\d{3})+(?!\d))/g,' ')+' FCFA';}
   function sousTotal(){return val('ad')*PRIX_AD+val('en')*PRIX_EN;}
   function remiseLocale(brut){
     if(!promo) return 0;
@@ -253,6 +259,7 @@
     if(r>0){ brutEl.style.display='block'; brutEl.textContent=eur(brut); }
     else{ brutEl.style.display='none'; }
     document.getElementById('total').textContent=eur(brut-r);
+    document.getElementById('totalCfa').textContent='\u2248 '+cfa(brut-r);
   }
 
   // Renvoie un entier de places, ou null si l'information est inconnue.
