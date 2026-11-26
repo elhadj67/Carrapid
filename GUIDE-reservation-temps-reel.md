@@ -90,6 +90,30 @@ C'est ce qui met la place à jour automatiquement quand un client a payé.
 3. Quand tout marche, passe Stripe en **mode production** (Live) et refais le
    webhook avec les clés Live.
 
+## Étape 7 — Recevoir un e-mail à chaque réservation (10 min)
+
+Le webhook envoie un e-mail au gérant dès qu'une réservation est payée
+(référence, date, créneau, passagers, montant, nom, e-mail et téléphone du client).
+
+1. Crée un compte gratuit sur **resend.com** avec l'adresse qui doit recevoir
+   les notifications.
+2. Resend → **API Keys → Create API Key** (permission *Sending access*) → copie
+   la clé `re_...`.
+3. Supabase → **Edge Functions → Secrets** → ajoute :
+   - `RESEND_API_KEY` = la clé `re_...`
+   - `NOTIF_EMAIL` = l'adresse du compte Resend (plusieurs adresses possibles,
+     séparées par des virgules, une fois le domaine vérifié)
+4. Supabase → **Edge Functions → stripe-webhook** → remplace le code par le
+   nouveau `stripe-webhook.ts` → *Deploy*.
+5. Fais une réservation test : l'e-mail arrive en quelques secondes. Sinon,
+   regarde **Edge Functions → stripe-webhook → Logs**.
+
+Sans domaine vérifié, Resend envoie depuis `onboarding@resend.dev` et seulement
+vers l'adresse du compte Resend. Pour envoyer depuis `reservations@carrapidride.com`
+(ou vers d'autres adresses), vérifie le domaine dans **Resend → Domains** (ajout
+d'enregistrements DNS chez OVH), puis ajoute le secret
+`NOTIF_FROM` = `Car Rapid Ride <reservations@carrapidride.com>`.
+
 ---
 
 ## Comment ça marche (résumé)
